@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gravity Dance - N-Body Simulator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1a2e 100%);
+            color: #fff;
+            overflow: hidden;
+        }
+        #canvas {
+            display: block;
+            background: #000;
+            cursor: crosshair;
+        }
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(26, 26, 46, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            max-width: 300px;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #4fc3f7;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            margin: 5px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        .info {
+            margin-top: 15px;
+            font-size: 12px;
+            color: #aaa;
+            line-height: 1.6;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin-top: 5px;
+        }
+        .stats {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(26, 26, 46, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="controls">
+        <h1>🌌 Gravity Dance</h1>
+        
+        <button onclick="loadPreset('solar')">☀️ Solar System</button>
+        <button onclick="loadPreset('binary')">⭐ Binary Stars</button>
+        <button onclick="loadPreset('galaxy')">🌀 Galaxy Collision</button>
+        <button onclick="loadPreset('chaos')">💫 Chaotic System</button>
+        <button onclick="clearBodies()">🗑️ Clear All</button>
+        
+        <label>
+            Time Speed: <span id="speedValue">1.0</span>x
+            <input type="range" min="0.1" max="5" step="0.1" value="1" 
+                   oninput="timeSpeed = parseFloat(this.value); 
+                           document.getElementById('speedValue').textContent = this.value">
+        </label>
+        
+        <label>
+            <input type="checkbox" id="trails" checked onchange="showTrails = this.checked"> 
+            Show Trails
+        </label>
+        
+        <div class="info">
+            <strong>Controls:</strong><br>
+            • Click to add bodies<br>
+            • Drag to set velocity<br>
+            • Press SPACE to pause<br>
+            • Scroll to zoom
+        </div>
+    </div>
+    
+    <div class="stats">
+        <div>Bodies: <span id="bodyCount">0</span></div>
+        <div>FPS: <span id="fps">60</span></div>
+        <div>Time: <span id="simTime">0.0</span> years</div>
+    </div>
+
+    <script src="physics.js"></script>
+    <script src="presets.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
