@@ -3,104 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gravity Dance - N-Body Simulator</title>
+    <title>Gravity Dance</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1a2e 100%);
-            color: #fff;
-            overflow: hidden;
-            height: 100vh;
-        }
-        
-        canvas {
-            display: block;
-            background: #000;
-            cursor: crosshair;
-            width: 100%;
-            height: 100%;
-        }
+        * { margin: 0; padding: 0; }
+        html, body { width: 100%; height: 100%; }
+        body { background: #000; overflow: hidden; font-family: Arial; }
+        canvas { display: block; width: 100%; height: 100%; background: #000011; }
         
         .controls {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background: rgba(26, 26, 46, 0.95);
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
-            max-width: 300px;
-            z-index: 100;
-            border: 1px solid rgba(79, 195, 247, 0.3);
-        }
-        
-        h1 {
-            font-size: 24px;
-            margin-bottom: 15px;
-            color: #4fc3f7;
-            text-align: center;
+            position: fixed; top: 20px; left: 20px;
+            background: rgba(0, 0, 0, 0.8); padding: 20px;
+            border-radius: 8px; color: #0f0; z-index: 100;
+            border: 2px solid #0f0;
         }
         
         button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            color: white;
-            padding: 10px 15px;
-            margin: 5px 0;
-            border-radius: 5px;
-            cursor: pointer;
-            width: 100%;
-            font-size: 13px;
+            display: block; width: 200px; padding: 10px;
+            margin: 5px 0; background: #0f0; color: #000;
+            border: none; border-radius: 4px; cursor: pointer;
             font-weight: bold;
-            transition: all 0.3s;
         }
         
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        button:active {
-            transform: translateY(0);
-        }
-        
-        .info {
-            margin-top: 15px;
-            font-size: 12px;
-            color: #aaa;
-            line-height: 1.6;
-            border-top: 1px solid rgba(79, 195, 247, 0.2);
-            padding-top: 10px;
-        }
-        
-        label {
-            display: block;
-            margin-top: 10px;
-            font-size: 13px;
-        }
-        
-        input[type="range"] {
-            width: 100%;
-            margin-top: 5px;
-        }
+        button:hover { background: #0f0; opacity: 0.8; }
         
         .stats {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(26, 26, 46, 0.95);
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 13px;
-            z-index: 100;
-            border: 1px solid rgba(79, 195, 247, 0.3);
-            line-height: 1.8;
-        }
-        
-        .stat-row {
-            margin: 5px 0;
+            position: fixed; top: 20px; right: 20px;
+            background: rgba(0, 0, 0, 0.8); color: #0f0;
+            padding: 15px; border-radius: 8px; border: 2px solid #0f0;
         }
     </style>
 </head>
@@ -108,69 +37,56 @@
     <canvas id="canvas"></canvas>
     
     <div class="controls">
-        <h1>🌌 Gravity Dance</h1>
-        
+        <h2 style="color: #0f0; margin-bottom: 10px;">GRAVITY DANCE</h2>
         <button onclick="loadSolarSystem()">☀️ Solar System</button>
         <button onclick="loadBinaryStars()">⭐ Binary Stars</button>
-        <button onclick="loadGalaxyCollision()">🌀 Galaxy Collision</button>
-        <button onclick="loadChaosSystem()">💫 Chaotic System</button>
-        <button onclick="clearBodies()">🗑️ Clear All</button>
-        
-        <label>
-            Time Speed: <span id="speedValue">1.0</span>x
-            <input type="range" min="0.1" max="5" step="0.1" value="1" 
-                   oninput="timeSpeed = parseFloat(this.value); 
-                           document.getElementById('speedValue').textContent = this.value">
-        </label>
-        
-        <label>
-            <input type="checkbox" id="trails" checked onchange="showTrails = this.checked"> 
-            Show Trails
-        </label>
-        
-        <div class="info">
-            <strong>📌 Controls:</strong><br>
-            • Click & drag to add bodies<br>
-            • SPACE to pause<br>
-            • Scroll to zoom<br>
-            • Right click to pan
-        </div>
+        <button onclick="loadGalaxyCollision()">🌀 Galaxies</button>
+        <button onclick="loadChaosSystem()">💫 Chaos</button>
+        <button onclick="clearBodies()">Clear</button>
+        <p style="margin-top: 10px; font-size: 12px;">Click+drag to add bodies</p>
     </div>
     
     <div class="stats">
-        <div class="stat-row">Bodies: <span id="bodyCount">0</span></div>
-        <div class="stat-row">FPS: <span id="fps">60</span></div>
-        <div class="stat-row">Time: <span id="simTime">0.0</span>s</div>
+        <div>Bodies: <span id="count">0</span></div>
+        <div>FPS: <span id="fps">60</span></div>
     </div>
 
     <script>
-        // ============ PHYSICS ENGINE ============
-        const G = 100; // Gravitational constant (scaled)
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Force canvas to fill screen
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+        
+        const G = 100;
+        let bodies = [];
+        let paused = false;
         
         class Body {
             constructor(x, y, vx, vy, mass, color) {
-                this.x = x;
-                this.y = y;
-                this.vx = vx;
-                this.vy = vy;
+                this.x = x; this.y = y;
+                this.vx = vx; this.vy = vy;
                 this.mass = mass;
                 this.color = color;
-                this.radius = Math.max(2, Math.sqrt(mass) / 50);
+                this.radius = Math.max(2, Math.sqrt(mass) / 30);
                 this.trail = [];
-                this.maxTrailLength = 150;
             }
             
             applyForce(other) {
                 const dx = other.x - this.x;
                 const dy = other.y - this.y;
-                const distSq = dx * dx + dy * dy;
+                const distSq = dx*dx + dy*dy;
                 const dist = Math.sqrt(distSq);
-                
                 if (dist < 10) return;
                 
                 const force = (G * this.mass * other.mass) / (distSq + 100);
-                const fx = (force * dx) / dist;
-                const fy = (force * dy) / dist;
+                const fx = force * dx / dist;
+                const fy = force * dy / dist;
                 
                 this.vx += fx / this.mass;
                 this.vy += fy / this.mass;
@@ -179,17 +95,12 @@
             update(dt) {
                 this.x += this.vx * dt;
                 this.y += this.vy * dt;
-                
-                if (showTrails) {
-                    this.trail.push({ x: this.x, y: this.y });
-                    if (this.trail.length > this.maxTrailLength) {
-                        this.trail.shift();
-                    }
-                }
+                this.trail.push({x: this.x, y: this.y});
+                if (this.trail.length > 100) this.trail.shift();
             }
             
-            draw(ctx, canvasWidth, canvasHeight) {
-                // Draw trail
+            draw() {
+                // Trail
                 if (this.trail.length > 1) {
                     ctx.strokeStyle = this.color;
                     ctx.lineWidth = 0.5;
@@ -200,232 +111,134 @@
                         ctx.lineTo(this.trail[i].x, this.trail[i].y);
                     }
                     ctx.stroke();
-                    ctx.globalAlpha = 1.0;
+                    ctx.globalAlpha = 1;
                 }
                 
-                // Draw glow
-                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * 2);
-                gradient.addColorStop(0, this.color);
-                gradient.addColorStop(1, 'transparent');
-                ctx.fillStyle = gradient;
+                // Glow
+                const g = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius*2);
+                g.addColorStop(0, this.color);
+                g.addColorStop(1, 'transparent');
+                ctx.fillStyle = g;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius * 2, 0, Math.PI * 2);
+                ctx.arc(this.x, this.y, this.radius*2, 0, Math.PI*2);
                 ctx.fill();
                 
-                // Draw body
+                // Body
                 ctx.fillStyle = this.color;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
                 ctx.fill();
             }
         }
         
-        // ============ PRESET SCENARIOS ============
         function loadSolarSystem() {
             bodies = [];
-            const cx = canvas.width / 2;
-            const cy = canvas.height / 2;
-            
-            bodies.push(new Body(cx, cy, 0, 0, 10000, '#FDB813')); // Sun
-            bodies.push(new Body(cx + 100, cy, 0, 8, 100, '#8C7853')); // Mercury
-            bodies.push(new Body(cx + 140, cy, 0, 6, 200, '#FFC649')); // Venus
-            bodies.push(new Body(cx + 180, cy, 0, 5, 250, '#4A90E2')); // Earth
-            bodies.push(new Body(cx + 220, cy, 0, 4, 150, '#E27B58')); // Mars
-            bodies.push(new Body(cx + 300, cy, 0, 2.5, 500, '#C88B3A')); // Jupiter
-            bodies.push(new Body(cx + 370, cy, 0, 2, 400, '#FAD5A5')); // Saturn
+            const cx = canvas.width/2, cy = canvas.height/2;
+            bodies.push(new Body(cx, cy, 0, 0, 10000, '#FDB813'));
+            bodies.push(new Body(cx+100, cy, 0, 8, 100, '#8C7853'));
+            bodies.push(new Body(cx+140, cy, 0, 6, 200, '#FFC649'));
+            bodies.push(new Body(cx+180, cy, 0, 5, 250, '#4A90E2'));
+            bodies.push(new Body(cx+220, cy, 0, 4, 150, '#E27B58'));
+            bodies.push(new Body(cx+300, cy, 0, 2.5, 500, '#C88B3A'));
         }
         
         function loadBinaryStars() {
             bodies = [];
-            const cx = canvas.width / 2;
-            const cy = canvas.height / 2;
-            
-            bodies.push(new Body(cx - 100, cy, 0, 3, 5000, '#00BFFF')); // Star 1
-            bodies.push(new Body(cx + 100, cy, 0, -3, 5000, '#FF6B6B')); // Star 2
-            
+            const cx = canvas.width/2, cy = canvas.height/2;
+            bodies.push(new Body(cx-100, cy, 0, 3, 5000, '#00BFFF'));
+            bodies.push(new Body(cx+100, cy, 0, -3, 5000, '#FF6B6B'));
             for (let i = 0; i < 20; i++) {
-                const angle = (i / 20) * Math.PI * 2;
-                const radius = 120 + Math.random() * 60;
-                const x = cx + Math.cos(angle) * radius;
-                const y = cy + Math.sin(angle) * radius;
-                const v = Math.sqrt(G * 10000 / radius);
-                const vx = -Math.sin(angle) * v * 0.7;
-                const vy = Math.cos(angle) * v * 0.7;
-                
-                bodies.push(new Body(x, y, vx, vy, 50, '#90EE90'));
+                const a = (i/20)*Math.PI*2, r = 120 + Math.random()*60;
+                const x = cx + Math.cos(a)*r, y = cy + Math.sin(a)*r;
+                const v = Math.sqrt(G*10000/r);
+                bodies.push(new Body(x, y, -Math.sin(a)*v*0.7, Math.cos(a)*v*0.7, 50, '#90EE90'));
             }
         }
         
         function loadGalaxyCollision() {
             bodies = [];
-            const cx = canvas.width / 2;
-            const cy = canvas.height / 2;
-            
-            createGalaxy(cx - 150, cy - 100, 2, 1.5, '#FFD700');
-            createGalaxy(cx + 150, cy + 100, -2, -1.5, '#FF69B4');
+            const cx = canvas.width/2, cy = canvas.height/2;
+            makeGalaxy(cx-150, cy-100, 2, 1.5, '#FFD700');
+            makeGalaxy(cx+150, cy+100, -2, -1.5, '#FF69B4');
         }
         
-        function createGalaxy(centerX, centerY, vx, vy, color) {
-            bodies.push(new Body(centerX, centerY, vx, vy, 8000, color)); // Black hole
-            
+        function makeGalaxy(cx, cy, vx, vy, col) {
+            bodies.push(new Body(cx, cy, vx, vy, 8000, col));
             for (let i = 0; i < 40; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const radius = 80 + Math.random() * 100;
-                const x = centerX + Math.cos(angle) * radius;
-                const y = centerY + Math.sin(angle) * radius;
-                
-                const v = Math.sqrt(G * 8000 / radius);
-                const vx_orb = -Math.sin(angle) * v * (0.5 + Math.random() * 0.5);
-                const vy_orb = Math.cos(angle) * v * (0.5 + Math.random() * 0.5);
-                
-                bodies.push(new Body(x, y, vx + vx_orb, vy + vy_orb, 80, color));
+                const a = Math.random()*Math.PI*2, r = 80 + Math.random()*100;
+                const x = cx + Math.cos(a)*r, y = cy + Math.sin(a)*r;
+                const v = Math.sqrt(G*8000/r);
+                bodies.push(new Body(x, y, vx - Math.sin(a)*v*0.5, vy + Math.cos(a)*v*0.5, 80, col));
             }
         }
         
         function loadChaosSystem() {
             bodies = [];
-            const cx = canvas.width / 2;
-            const cy = canvas.height / 2;
-            
-            const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#FF8B94', '#A8DADC'];
-            
+            const cx = canvas.width/2, cy = canvas.height/2;
+            const cols = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#FF8B94'];
             for (let i = 0; i < 25; i++) {
-                const x = cx + (Math.random() - 0.5) * 400;
-                const y = cy + (Math.random() - 0.5) * 400;
-                const vx = (Math.random() - 0.5) * 5;
-                const vy = (Math.random() - 0.5) * 5;
-                const mass = 500 * (0.5 + Math.random());
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                
-                bodies.push(new Body(x, y, vx, vy, mass, color));
+                bodies.push(new Body(
+                    cx + (Math.random()-0.5)*400,
+                    cy + (Math.random()-0.5)*400,
+                    (Math.random()-0.5)*5,
+                    (Math.random()-0.5)*5,
+                    500,
+                    cols[Math.floor(Math.random()*cols.length)]
+                ));
             }
         }
         
-        function clearBodies() {
-            bodies = [];
-        }
+        function clearBodies() { bodies = []; }
         
-        // ============ MAIN SIMULATION ============
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        let bodies = [];
-        let timeSpeed = 1;
-        let showTrails = true;
-        let paused = false;
-        let simTime = 0;
-        
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-        
-        // Mouse controls
-        let isDragging = false;
-        let dragStartX = 0;
-        let dragStartY = 0;
-        
-        canvas.addEventListener('mousedown', (e) => {
-            dragStartX = e.clientX;
-            dragStartY = e.clientY;
-            isDragging = true;
+        let isDragging = false, dragX = 0, dragY = 0;
+        canvas.addEventListener('mousedown', e => {
+            dragX = e.clientX; dragY = e.clientY; isDragging = true;
         });
-        
-        canvas.addEventListener('mouseup', (e) => {
+        canvas.addEventListener('mouseup', e => {
             if (isDragging) {
-                const vx = (dragStartX - e.clientX) * 0.02;
-                const vy = (dragStartY - e.clientY) * 0.02;
-                const mass = 300;
-                const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#FF8B94'];
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                
-                bodies.push(new Body(dragStartX, dragStartY, vx, vy, mass, color));
+                bodies.push(new Body(dragX, dragY, (dragX-e.clientX)*0.02, (dragY-e.clientY)*0.02, 300, '#00FF00'));
             }
             isDragging = false;
         });
         
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                paused = !paused;
-                e.preventDefault();
-            }
+        document.addEventListener('keydown', e => {
+            if (e.code === 'Space') { paused = !paused; e.preventDefault(); }
         });
         
-        // FPS counter
-        let frameCount = 0;
-        let lastTime = Date.now();
-        
-        function updateStats() {
-            frameCount++;
-            const currentTime = Date.now();
-            
-            if (currentTime - lastTime >= 1000) {
-                document.getElementById('fps').textContent = frameCount;
-                frameCount = 0;
-                lastTime = currentTime;
-            }
-            
-            document.getElementById('bodyCount').textContent = bodies.length;
-            document.getElementById('simTime').textContent = (simTime / 1000).toFixed(1);
-        }
-        
-        function step(dt) {
-            if (paused) return;
-            
-            dt *= timeSpeed;
-            simTime += dt;
-            
-            for (let i = 0; i < bodies.length; i++) {
-                for (let j = i + 1; j < bodies.length; j++) {
-                    bodies[i].applyForce(bodies[j]);
-                    bodies[j].applyForce(bodies[i]);
-                }
-            }
-            
-            for (let body of bodies) {
-                body.update(dt);
-            }
-        }
-        
-        function draw() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            for (let body of bodies) {
-                body.draw(ctx, canvas.width, canvas.height);
-            }
-            
-            if (isDragging) {
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([5, 5]);
-                ctx.beginPath();
-                ctx.moveTo(dragStartX, dragStartY);
-                ctx.lineTo(event.clientX, event.clientY);
-                ctx.stroke();
-                ctx.setLineDash([]);
-            }
-        }
-        
-        let lastFrameTime = Date.now();
+        let frameCount = 0, lastTime = Date.now();
         
         function animate() {
             const now = Date.now();
-            const deltaTime = (now - lastFrameTime) / 1000;
-            lastFrameTime = now;
+            const dt = Math.min((now - lastTime) / 1000, 0.033);
+            lastTime = now;
             
-            const dt = Math.min(deltaTime, 0.033);
+            if (!paused) {
+                for (let i = 0; i < bodies.length; i++) {
+                    for (let j = i+1; j < bodies.length; j++) {
+                        bodies[i].applyForce(bodies[j]);
+                        bodies[j].applyForce(bodies[i]);
+                    }
+                }
+                for (let b of bodies) b.update(dt);
+            }
             
-            step(dt);
-            draw();
-            updateStats();
+            ctx.fillStyle = '#000011';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            for (let b of bodies) b.draw();
+            
+            frameCount++;
+            if (now - lastTime > 1000) {
+                document.getElementById('fps').textContent = frameCount;
+                frameCount = 0;
+                lastTime = now;
+            }
+            
+            document.getElementById('count').textContent = bodies.length;
             
             requestAnimationFrame(animate);
         }
         
-        // Start simulation
         loadSolarSystem();
         animate();
     </script>
