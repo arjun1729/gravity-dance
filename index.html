@@ -1,1298 +1,1532 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gravity Dance — Advanced Astrophysics Simulator</title>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #00000a;
-            --panel: rgba(0,10,30,0.92);
-            --accent: #00f5ff;
-            --accent2: #ff6b35;
-            --accent3: #a855f7;
-            --green: #39ff14;
-            --text: #c8d8e8;
-            --dim: #4a6070;
-            --border: rgba(0,245,255,0.2);
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
-        canvas { display: block; position: fixed; top: 0; left: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>N-Body Gravitational Dynamics — Advanced Simulation Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void: #02040a;
+  --deep: #060c18;
+  --surface: #0a1628;
+  --raised: #0f1f38;
+  --border: #1a3050;
+  --border-bright: #2a4a70;
+  --text-primary: #d4e4f4;
+  --text-secondary: #7a9ab8;
+  --text-dim: #3a5a78;
+  --amber: #e8a020;
+  --amber-dim: #704800;
+  --cyan: #40c8e0;
+  --cyan-dim: #104858;
+  --green: #48c878;
+  --green-dim: #0c3820;
+  --red: #e04848;
+  --red-dim: #400808;
+  --white: #f0f8ff;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-sans: 'IBM Plex Sans', sans-serif;
+}
 
-        .panel {
-            position: fixed; z-index: 10;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            backdrop-filter: blur(10px);
-            font-family: 'Space Mono', monospace;
-            color: var(--text);
-            font-size: 11px;
-        }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--void); }
 
-        /* LEFT PANEL */
-        #left-panel {
-            top: 15px; left: 15px;
-            width: 220px;
-            padding: 15px;
-        }
-        #left-panel h1 {
-            font-family: 'Orbitron', monospace;
-            color: var(--accent);
-            font-size: 14px;
-            letter-spacing: 2px;
-            margin-bottom: 3px;
-        }
-        #left-panel .subtitle {
-            color: var(--dim);
-            font-size: 9px;
-            letter-spacing: 1px;
-            margin-bottom: 15px;
-        }
+canvas { display: block; position: fixed; top: 0; left: 0; cursor: crosshair; }
 
-        .section-title {
-            color: var(--accent);
-            font-size: 9px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin: 12px 0 6px;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 4px;
-        }
+/* ─── LAYOUT SHELL ─────────────────────────────────── */
+#ui {
+  position: fixed; inset: 0;
+  display: grid;
+  grid-template-columns: 240px 1fr 280px;
+  grid-template-rows: 38px 1fr 110px;
+  pointer-events: none;
+  z-index: 10;
+}
 
-        button {
-            display: block; width: 100%;
-            padding: 7px 10px; margin: 3px 0;
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text);
-            font-family: 'Space Mono', monospace;
-            font-size: 10px;
-            cursor: pointer;
-            border-radius: 2px;
-            text-align: left;
-            transition: all 0.2s;
-        }
-        button:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,245,255,0.05); }
-        button.active { border-color: var(--accent); color: var(--accent); background: rgba(0,245,255,0.1); }
-        button.danger { border-color: rgba(255,107,53,0.4); color: var(--accent2); }
-        button.danger:hover { border-color: var(--accent2); background: rgba(255,107,53,0.1); }
+/* ─── TOPBAR ────────────────────────────────────────── */
+#topbar {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  display: flex; align-items: center;
+  background: var(--deep);
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  gap: 20px;
+  pointer-events: all;
+}
 
-        .slider-row {
-            margin: 6px 0;
-        }
-        .slider-row label {
-            display: flex; justify-content: space-between;
-            margin-bottom: 3px; color: var(--dim); font-size: 10px;
-        }
-        .slider-row label span { color: var(--accent); }
-        input[type=range] {
-            width: 100%; height: 3px;
-            -webkit-appearance: none;
-            background: var(--border);
-            border-radius: 2px;
-            outline: none;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 10px; height: 10px;
-            border-radius: 50%;
-            background: var(--accent);
-            cursor: pointer;
-        }
+#topbar .logo {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--cyan);
+  letter-spacing: 0.15em;
+  white-space: nowrap;
+}
 
-        .toggle-row {
-            display: flex; justify-content: space-between;
-            align-items: center; margin: 5px 0; color: var(--dim); font-size: 10px;
-        }
-        .toggle {
-            width: 30px; height: 16px;
-            background: var(--border);
-            border-radius: 8px; cursor: pointer;
-            position: relative; transition: background 0.2s;
-        }
-        .toggle.on { background: var(--accent); }
-        .toggle::after {
-            content: '';
-            position: absolute; top: 2px; left: 2px;
-            width: 12px; height: 12px;
-            background: white; border-radius: 50%;
-            transition: transform 0.2s;
-        }
-        .toggle.on::after { transform: translateX(14px); }
+#topbar .sep { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
 
-        /* RIGHT PANEL - Physics Display */
-        #right-panel {
-            top: 15px; right: 15px;
-            width: 260px; padding: 15px;
-        }
-        #right-panel h2 {
-            font-family: 'Orbitron', monospace;
-            font-size: 11px; color: var(--accent3);
-            letter-spacing: 2px; margin-bottom: 12px;
-        }
+#topbar .mission-id {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+}
 
-        .eq-box {
-            background: rgba(168,85,247,0.06);
-            border: 1px solid rgba(168,85,247,0.2);
-            border-radius: 3px; padding: 8px;
-            margin: 6px 0; font-size: 10px;
-            line-height: 1.8;
-        }
-        .eq-box .eq-name { color: var(--accent3); font-size: 9px; letter-spacing: 1px; margin-bottom: 4px; }
-        .eq-box .eq-math { color: var(--text); font-style: italic; }
-        .eq-box .eq-val { color: var(--green); font-size: 10px; }
+.status-light {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.status-light.paused { background: var(--amber); box-shadow: 0 0 6px var(--amber); animation: none; }
 
-        /* BOTTOM PANEL - Live Data */
-        #bottom-panel {
-            bottom: 15px; left: 15px;
-            right: 15px; padding: 12px 15px;
-            display: flex; gap: 30px; align-items: center;
-        }
-        .stat-group { display: flex; flex-direction: column; gap: 3px; }
-        .stat-label { color: var(--dim); font-size: 9px; letter-spacing: 1px; }
-        .stat-val { color: var(--accent); font-size: 13px; font-family: 'Orbitron', monospace; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
-        /* Energy graph */
-        #energy-canvas {
-            position: fixed; bottom: 70px; right: 15px;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            background: var(--panel);
-        }
+#topbar .status-text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  letter-spacing: 0.08em;
+}
 
-        /* Selected body info */
-        #body-info {
-            position: fixed; bottom: 70px; left: 15px;
-            width: 220px; padding: 12px;
-            display: none;
-        }
-        #body-info h3 {
-            font-family: 'Orbitron', monospace;
-            font-size: 10px; color: var(--accent2);
-            margin-bottom: 8px; letter-spacing: 1px;
-        }
-        .info-row {
-            display: flex; justify-content: space-between;
-            margin: 3px 0; font-size: 10px;
-        }
-        .info-row .k { color: var(--dim); }
-        .info-row .v { color: var(--text); }
+#topbar .spacer { flex: 1; }
 
-        /* Mode indicator */
-        #mode-display {
-            position: fixed; top: 15px; left: 50%; transform: translateX(-50%);
-            background: var(--panel); border: 1px solid var(--border);
-            padding: 6px 16px; border-radius: 20px;
-            font-family: 'Orbitron', monospace; font-size: 10px;
-            color: var(--accent); letter-spacing: 2px;
-        }
+.top-stat {
+  display: flex; align-items: baseline; gap: 6px;
+}
+.top-stat .label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.top-stat .value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-primary);
+  font-weight: 500;
+  min-width: 70px;
+}
+.top-stat .value.amber { color: var(--amber); }
+.top-stat .value.cyan { color: var(--cyan); }
+.top-stat .value.green { color: var(--green); }
 
-        /* Crosshair cursor */
-        canvas { cursor: crosshair; }
+/* ─── LEFT PANEL ────────────────────────────────────── */
+#left {
+  grid-column: 1;
+  grid-row: 2;
+  background: var(--deep);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  overflow-x: hidden;
+  pointer-events: all;
+  scrollbar-width: none;
+}
+#left::-webkit-scrollbar { display: none; }
 
-        /* Tooltip */
-        #tooltip {
-            position: fixed; pointer-events: none;
-            background: var(--panel); border: 1px solid var(--border);
-            padding: 6px 10px; border-radius: 3px;
-            font-family: 'Space Mono', monospace; font-size: 10px;
-            color: var(--text); display: none; z-index: 20;
-        }
+/* ─── RIGHT PANEL ───────────────────────────────────── */
+#right {
+  grid-column: 3;
+  grid-row: 2;
+  background: var(--deep);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  overflow-x: hidden;
+  pointer-events: all;
+  scrollbar-width: none;
+}
+#right::-webkit-scrollbar { display: none; }
 
-        .key-hint {
-            display: flex; justify-content: space-between;
-            margin: 2px 0; font-size: 9px;
-        }
-        .key { background: rgba(0,245,255,0.1); border: 1px solid var(--border);
-               padding: 1px 5px; border-radius: 2px; color: var(--accent); }
-    </style>
+/* ─── BOTTOM BAR ────────────────────────────────────── */
+#bottom {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  background: var(--deep);
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 240px 1fr 280px;
+  pointer-events: all;
+}
+
+/* ─── PANEL SECTIONS ────────────────────────────────── */
+.section {
+  border-bottom: 1px solid var(--border);
+  padding: 12px 14px;
+}
+
+.section-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 10px;
+}
+
+.section-header .marker {
+  width: 2px; height: 12px;
+  background: var(--cyan);
+  flex-shrink: 0;
+}
+.section-header .marker.amber { background: var(--amber); }
+.section-header .marker.green { background: var(--green); }
+
+.section-header h3 {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+/* ─── PRESET BUTTONS ────────────────────────────────── */
+.preset-btn {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 8px 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  transition: all 0.15s;
+  pointer-events: all;
+}
+.preset-btn:hover {
+  background: var(--raised);
+  border-color: var(--border-bright);
+}
+.preset-btn:last-child { margin-bottom: 0; }
+
+.preset-btn .icon {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+.preset-btn .meta { flex: 1; text-align: left; }
+.preset-btn .meta .name {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-primary);
+  display: block;
+  line-height: 1.3;
+}
+.preset-btn .meta .desc {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  display: block;
+  margin-top: 1px;
+}
+
+.preset-btn .nbodies {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+}
+
+/* ─── ADD BODY BUTTONS ──────────────────────────────── */
+.add-btn {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 7px 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  transition: all 0.15s;
+  pointer-events: all;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+}
+.add-btn:hover { background: var(--raised); border-color: var(--border-bright); color: var(--text-primary); }
+.add-btn.active { background: rgba(64,200,224,0.08); border-color: var(--cyan); color: var(--cyan); }
+.add-btn.active-amber { background: rgba(232,160,32,0.08); border-color: var(--amber); color: var(--amber); }
+.add-btn.active-red { background: rgba(224,72,72,0.08); border-color: var(--red); color: var(--red); }
+
+.add-btn .dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── SLIDERS ───────────────────────────────────────── */
+.param-row {
+  margin-bottom: 10px;
+}
+.param-row:last-child { margin-bottom: 0; }
+
+.param-label {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 5px;
+}
+.param-label span:first-child {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.param-label .param-val {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--cyan);
+  font-weight: 500;
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%; height: 2px;
+  background: var(--border);
+  border-radius: 1px;
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--cyan);
+  cursor: pointer;
+  border: 2px solid var(--deep);
+  box-shadow: 0 0 4px rgba(64,200,224,0.4);
+}
+
+/* ─── TOGGLES ───────────────────────────────────────── */
+.toggle-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+.toggle-row:last-child { border-bottom: none; }
+
+.toggle-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 28px; height: 14px;
+  cursor: pointer;
+  pointer-events: all;
+}
+.toggle-switch input { display: none; }
+.toggle-track {
+  position: absolute; inset: 0;
+  background: var(--border);
+  border-radius: 7px;
+  transition: background 0.2s;
+}
+.toggle-switch input:checked + .toggle-track { background: var(--cyan); }
+.toggle-track::after {
+  content: '';
+  position: absolute; top: 2px; left: 2px;
+  width: 10px; height: 10px;
+  background: var(--deep);
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.toggle-switch input:checked + .toggle-track::after { transform: translateX(14px); }
+
+/* ─── KEY BINDINGS ──────────────────────────────────── */
+.keybind-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 4px 0;
+}
+.keybind-row .key {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-secondary);
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 2px 6px;
+  letter-spacing: 0.05em;
+}
+.keybind-row .action {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+}
+
+/* ─── RIGHT: PHYSICS EQUATIONS ──────────────────────── */
+.eq-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+}
+.eq-card:last-child { margin-bottom: 0; }
+
+.eq-title {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--text-dim);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+
+.eq-formula {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+
+.eq-live {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--green);
+  font-weight: 500;
+  border-top: 1px solid var(--border);
+  padding-top: 4px;
+  margin-top: 4px;
+}
+
+/* ─── BOTTOM PANELS ─────────────────────────────────── */
+#bottom-left {
+  padding: 10px 14px;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 6px;
+}
+
+#bottom-left .bl-title {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.selected-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.sel-row {
+  display: flex; flex-direction: column; gap: 1px;
+}
+.sel-k {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.sel-v {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+#bottom-center {
+  padding: 10px 14px;
+  border-right: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+}
+
+#bottom-right {
+  padding: 10px 14px;
+}
+
+#bottom-right .br-title {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+/* ─── ENERGY GRAPH ──────────────────────────────────── */
+#energy-canvas {
+  display: block;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+/* ─── SYSTEM STATS (bottom center) ──────────────────── */
+.sys-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px 20px;
+  width: 100%;
+}
+.sys-stat { display: flex; flex-direction: column; gap: 3px; }
+.sys-stat .lbl {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-dim);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.sys-stat .val {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+.sys-stat .val.cyan { color: var(--cyan); }
+.sys-stat .val.amber { color: var(--amber); }
+.sys-stat .val.green { color: var(--green); }
+
+/* ─── CROSSHAIR OVERLAY (center) ────────────────────── */
+#center-overlay {
+  grid-column: 2; grid-row: 2;
+  pointer-events: none;
+  position: relative;
+}
+
+/* ─── NO-SELECTION STATE ────────────────────────────── */
+.no-selection {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  font-style: italic;
+}
+</style>
 </head>
 <body>
 <canvas id="canvas"></canvas>
-<canvas id="energy-canvas" width="260" height="80"></canvas>
+<div id="ui">
 
-<div id="mode-display">SIMULATION ACTIVE</div>
-<div id="tooltip"></div>
+  <!-- TOPBAR -->
+  <header id="topbar">
+    <span class="logo">N-BODY DYNAMICS</span>
+    <div class="sep"></div>
+    <span class="mission-id">SIM-2025 / GRAVITATIONAL MECHANICS</span>
+    <div class="sep"></div>
+    <div class="status-light" id="status-dot"></div>
+    <span class="status-text" id="status-text">SIMULATION RUNNING</span>
+    <div class="spacer"></div>
+    <div class="top-stat"><span class="label">BODIES</span><span class="value cyan" id="t-bodies">0</span></div>
+    <div class="sep"></div>
+    <div class="top-stat"><span class="label">SIM TIME</span><span class="value" id="t-time">0.00 s</span></div>
+    <div class="sep"></div>
+    <div class="top-stat"><span class="label">TOTAL ENERGY</span><span class="value amber" id="t-energy">—</span></div>
+    <div class="sep"></div>
+    <div class="top-stat"><span class="label">ANG. MOMENTUM</span><span class="value" id="t-angular">—</span></div>
+    <div class="sep"></div>
+    <div class="top-stat"><span class="label">FPS</span><span class="value green" id="t-fps">60</span></div>
+    <div class="sep"></div>
+    <div class="top-stat"><span class="label">INTEGRATOR</span><span class="value amber">RK4</span></div>
+  </header>
 
-<!-- LEFT PANEL -->
-<div class="panel" id="left-panel">
-    <h1>GRAVITY DANCE</h1>
-    <div class="subtitle">ASTROPHYSICS SIMULATOR v2.0</div>
+  <!-- LEFT PANEL -->
+  <aside id="left">
 
-    <div class="section-title">▸ PRESETS</div>
-    <button onclick="loadPreset('solar')">☀ Solar System</button>
-    <button onclick="loadPreset('binary')">⭐ Binary Stars</button>
-    <button onclick="loadPreset('blackhole')">● Black Hole System</button>
-    <button onclick="loadPreset('galaxy')">◎ Galaxy Collision</button>
-    <button onclick="loadPreset('lagrange')">△ Lagrange Points</button>
-    <button onclick="loadPreset('chaos')">∿ Chaotic System</button>
+    <div class="section">
+      <div class="section-header">
+        <div class="marker"></div>
+        <h3>Scenario Library</h3>
+      </div>
 
-    <div class="section-title">▸ ADD BODY</div>
-    <button onclick="setAddMode('planet')" id="btn-planet">+ Planet (drag)</button>
-    <button onclick="setAddMode('star')" id="btn-star">+ Star (drag)</button>
-    <button onclick="setAddMode('blackhole_add')" id="btn-bh">+ Black Hole</button>
+      <button class="preset-btn" onclick="loadPreset('solar')">
+        <div class="icon" style="background:rgba(232,160,32,0.15)">☀</div>
+        <div class="meta">
+          <span class="name">Solar System</span>
+          <span class="desc">Keplerian orbital dynamics</span>
+        </div>
+        <span class="nbodies">7 bodies</span>
+      </button>
 
-    <div class="section-title">▸ SIMULATION</div>
-    <div class="slider-row">
-        <label>TIME SPEED <span id="speedVal">1.0×</span></label>
-        <input type="range" min="0.01" max="5" step="0.01" value="1" id="speedSlider">
-    </div>
-    <div class="slider-row">
-        <label>SOFTENING <span id="softVal">10</span></label>
-        <input type="range" min="1" max="100" step="1" value="10" id="softSlider">
-    </div>
+      <button class="preset-btn" onclick="loadPreset('binary')">
+        <div class="icon" style="background:rgba(64,200,224,0.12)">✦</div>
+        <div class="meta">
+          <span class="name">Binary Star System</span>
+          <span class="desc">Mutual gravitational orbit</span>
+        </div>
+        <span class="nbodies">32 bodies</span>
+      </button>
 
-    <div class="toggle-row">
-        TRAILS <div class="toggle on" id="toggleTrails" onclick="toggle('showTrails', 'toggleTrails')"></div>
-    </div>
-    <div class="toggle-row">
-        FORCE VECTORS <div class="toggle" id="toggleForces" onclick="toggle('showForces', 'toggleForces')"></div>
-    </div>
-    <div class="toggle-row">
-        VELOCITY VECTORS <div class="toggle" id="toggleVelocity" onclick="toggle('showVelocity', 'toggleVelocity')"></div>
-    </div>
-    <div class="toggle-row">
-        ORBIT PREDICTION <div class="toggle" id="toggleOrbit" onclick="toggle('showOrbit', 'toggleOrbit')"></div>
-    </div>
-    <div class="toggle-row">
-        ENERGY GRAPH <div class="toggle on" id="toggleEnergy" onclick="toggle('showEnergy', 'toggleEnergy')"></div>
-    </div>
+      <button class="preset-btn" onclick="loadPreset('blackhole')">
+        <div class="icon" style="background:rgba(224,72,72,0.12)">◉</div>
+        <div class="meta">
+          <span class="name">Black Hole Cluster</span>
+          <span class="desc">Schwarzschild geometry</span>
+        </div>
+        <span class="nbodies">11 bodies</span>
+      </button>
 
-    <div class="section-title">▸ KEYS</div>
-    <div class="key-hint"><span class="key">SPACE</span><span>pause</span></div>
-    <div class="key-hint"><span class="key">C</span><span>clear all</span></div>
-    <div class="key-hint"><span class="key">R</span><span>reset view</span></div>
-    <div class="key-hint"><span class="key">SCROLL</span><span>zoom</span></div>
-    <div class="key-hint"><span class="key">CLICK</span><span>select body</span></div>
-</div>
+      <button class="preset-btn" onclick="loadPreset('galaxy')">
+        <div class="icon" style="background:rgba(72,200,120,0.12)">⊛</div>
+        <div class="meta">
+          <span class="name">Galaxy Collision</span>
+          <span class="desc">Merger dynamics</span>
+        </div>
+        <span class="nbodies">102 bodies</span>
+      </button>
 
-<!-- RIGHT PANEL - Equations -->
-<div class="panel" id="right-panel">
-    <h2>EQUATIONS OF MOTION</h2>
+      <button class="preset-btn" onclick="loadPreset('lagrange')">
+        <div class="icon" style="background:rgba(168,100,240,0.12)">△</div>
+        <div class="meta">
+          <span class="name">Lagrange Points</span>
+          <span class="desc">L4 / L5 Trojan stability</span>
+        </div>
+        <span class="nbodies">19 bodies</span>
+      </button>
 
-    <div class="eq-box">
-        <div class="eq-name">NEWTON'S LAW OF GRAVITATION</div>
-        <div class="eq-math">F = G·m₁·m₂ / r²</div>
-        <div class="eq-val" id="eq-force">F = — N</div>
-    </div>
-
-    <div class="eq-box">
-        <div class="eq-name">EQUATION OF MOTION</div>
-        <div class="eq-math">r̈ = −G·Σ mⱼ(r−rⱼ) / |r−rⱼ|³</div>
-        <div class="eq-val" id="eq-accel">|a| = — m/s²</div>
-    </div>
-
-    <div class="eq-box">
-        <div class="eq-name">TOTAL ENERGY (CONSERVED)</div>
-        <div class="eq-math">E = ½mv² − G·m₁·m₂/r</div>
-        <div class="eq-val" id="eq-energy">E = — J</div>
-    </div>
-
-    <div class="eq-box">
-        <div class="eq-name">ANGULAR MOMENTUM (CONSERVED)</div>
-        <div class="eq-math">L = m·r × v</div>
-        <div class="eq-val" id="eq-angular">L = — kg·m²/s</div>
-    </div>
-
-    <div class="eq-box">
-        <div class="eq-name">ESCAPE VELOCITY</div>
-        <div class="eq-math">v_esc = √(2GM/r)</div>
-        <div class="eq-val" id="eq-escape">v_esc = — m/s</div>
+      <button class="preset-btn" onclick="loadPreset('chaos')">
+        <div class="icon" style="background:rgba(200,100,50,0.12)">∿</div>
+        <div class="meta">
+          <span class="name">Chaotic N-Body</span>
+          <span class="desc">Sensitive initial conditions</span>
+        </div>
+        <span class="nbodies">20 bodies</span>
+      </button>
     </div>
 
-    <div class="eq-box">
-        <div class="eq-name">SCHWARZSCHILD RADIUS</div>
-        <div class="eq-math">r_s = 2GM/c²</div>
-        <div class="eq-val" id="eq-schwarzschild">r_s = — (scaled)</div>
+    <div class="section">
+      <div class="section-header">
+        <div class="marker amber"></div>
+        <h3>Inject Body</h3>
+      </div>
+      <button class="add-btn" id="btn-planet" onclick="setMode('planet')">
+        <div class="dot" style="background:#6888a8"></div>
+        Planet — click & drag to set velocity
+      </button>
+      <button class="add-btn" id="btn-star" onclick="setMode('star')">
+        <div class="dot" style="background:#e8a020"></div>
+        Star — click & drag to set velocity
+      </button>
+      <button class="add-btn" id="btn-bh" onclick="setMode('blackhole_add')">
+        <div class="dot" style="background:#e04848"></div>
+        Black Hole — click to place
+      </button>
     </div>
 
-    <div class="eq-box">
-        <div class="eq-name">ORBITAL PERIOD (KEPLER III)</div>
-        <div class="eq-math">T² = 4π²a³ / GM</div>
-        <div class="eq-val" id="eq-period">T = — s</div>
+    <div class="section">
+      <div class="section-header">
+        <div class="marker green"></div>
+        <h3>Simulation Parameters</h3>
+      </div>
+      <div class="param-row">
+        <div class="param-label">
+          <span>Time Scale</span>
+          <span class="param-val" id="v-speed">1.00 ×</span>
+        </div>
+        <input type="range" min="0.01" max="8" step="0.01" value="1" id="sl-speed">
+      </div>
+      <div class="param-row">
+        <div class="param-label">
+          <span>Softening ε</span>
+          <span class="param-val" id="v-soft">10</span>
+        </div>
+        <input type="range" min="1" max="80" step="1" value="10" id="sl-soft">
+      </div>
+      <div class="param-row">
+        <div class="param-label">
+          <span>Trail Length</span>
+          <span class="param-val" id="v-trail">200</span>
+        </div>
+        <input type="range" min="20" max="600" step="10" value="200" id="sl-trail">
+      </div>
     </div>
 
-    <div class="eq-box">
-        <div class="eq-name">VIRIAL THEOREM</div>
-        <div class="eq-math">⟨T⟩ = −½⟨V⟩</div>
-        <div class="eq-val" id="eq-virial">ratio = —</div>
+    <div class="section">
+      <div class="section-header">
+        <div class="marker"></div>
+        <h3>Display Overlays</h3>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Particle Trails</span>
+        <label class="toggle-switch"><input type="checkbox" id="tog-trails" checked onchange="showTrails=this.checked"><div class="toggle-track"></div></label>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Force Vectors</span>
+        <label class="toggle-switch"><input type="checkbox" id="tog-forces" onchange="showForces=this.checked"><div class="toggle-track"></div></label>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Velocity Vectors</span>
+        <label class="toggle-switch"><input type="checkbox" id="tog-vel" onchange="showVelocity=this.checked"><div class="toggle-track"></div></label>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Orbit Prediction</span>
+        <label class="toggle-switch"><input type="checkbox" id="tog-orbit" onchange="showOrbit=this.checked"><div class="toggle-track"></div></label>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Centre of Mass</span>
+        <label class="toggle-switch"><input type="checkbox" id="tog-com" checked onchange="showCoM=this.checked"><div class="toggle-track"></div></label>
+      </div>
     </div>
-</div>
 
-<!-- BODY INFO PANEL -->
-<div class="panel" id="body-info">
-    <h3>● SELECTED BODY</h3>
-    <div class="info-row"><span class="k">TYPE</span><span class="v" id="bi-type">—</span></div>
-    <div class="info-row"><span class="k">MASS</span><span class="v" id="bi-mass">—</span></div>
-    <div class="info-row"><span class="k">VELOCITY</span><span class="v" id="bi-vel">—</span></div>
-    <div class="info-row"><span class="k">POSITION</span><span class="v" id="bi-pos">—</span></div>
-    <div class="info-row"><span class="k">KE</span><span class="v" id="bi-ke">—</span></div>
-    <div class="info-row"><span class="k">ACCELERATION</span><span class="v" id="bi-acc">—</span></div>
-    <div class="info-row"><span class="k">NEAR BODY</span><span class="v" id="bi-near">—</span></div>
-</div>
+    <div class="section">
+      <div class="section-header">
+        <div class="marker"></div>
+        <h3>Keyboard Shortcuts</h3>
+      </div>
+      <div class="keybind-row"><span class="key">Space</span><span class="action">Pause / Resume</span></div>
+      <div class="keybind-row"><span class="key">R</span><span class="action">Reset view</span></div>
+      <div class="keybind-row"><span class="key">C</span><span class="action">Clear all bodies</span></div>
+      <div class="keybind-row"><span class="key">Scroll</span><span class="action">Zoom in / out</span></div>
+      <div class="keybind-row"><span class="key">RMB drag</span><span class="action">Pan view</span></div>
+      <div class="keybind-row"><span class="key">Click</span><span class="action">Select body</span></div>
+    </div>
 
-<!-- BOTTOM STATS -->
-<div class="panel" id="bottom-panel">
-    <div class="stat-group">
-        <div class="stat-label">BODIES</div>
-        <div class="stat-val" id="stat-bodies">0</div>
+  </aside>
+
+  <!-- CENTER (transparent) -->
+  <div id="center-overlay"></div>
+
+  <!-- RIGHT PANEL -->
+  <aside id="right">
+
+    <div class="section">
+      <div class="section-header">
+        <div class="marker"></div>
+        <h3>Equations of Motion</h3>
+      </div>
+
+      <div class="eq-card">
+        <div class="eq-title">Newton's Law of Universal Gravitation</div>
+        <div class="eq-formula">F = G · m₁ · m₂ / r²</div>
+        <div class="eq-live" id="eq-F">F = —</div>
+      </div>
+
+      <div class="eq-card">
+        <div class="eq-title">N-Body Equation of Motion</div>
+        <div class="eq-formula">r̈ᵢ = −G Σⱼ mⱼ (rᵢ−rⱼ) / |rᵢ−rⱼ|³</div>
+        <div class="eq-live" id="eq-A">|a| = —</div>
+      </div>
+
+      <div class="eq-card">
+        <div class="eq-title">Total Mechanical Energy</div>
+        <div class="eq-formula">E = ½Σmᵢvᵢ² − GΣΣ mᵢmⱼ / rᵢⱼ</div>
+        <div class="eq-live" id="eq-E">E = —</div>
+      </div>
+
+      <div class="eq-card">
+        <div class="eq-title">Angular Momentum (conserved)</div>
+        <div class="eq-formula">L = Σᵢ mᵢ (rᵢ × ṙᵢ)</div>
+        <div class="eq-live" id="eq-L">L = —</div>
+      </div>
+
+      <div class="eq-card">
+        <div class="eq-title">Escape Velocity</div>
+        <div class="eq-formula">v_esc = √(2GM / r)</div>
+        <div class="eq-live" id="eq-Vesc">v_esc = —</div>
+      </div>
+
+      <div class="eq-card">
+        <div class="eq-title">Schwarzschild Radius</div>
+        <div class="eq-formula">r_s = 2GM / c²</div>
+        <div class="eq-live" id="eq-Rs">r_s = —</div>
+      </div>
+
+      <div class="eq-card">
+        <div class="eq-title">Kepler's Third Law</div>
+        <div class="eq-formula">T² = 4π² a³ / (GM)</div>
+        <div class="eq-live" id="eq-T">T = —</div>
+      </div>
+
+      <div class="eq-card">
+        <div class="eq-title">Virial Theorem</div>
+        <div class="eq-formula">⟨T_kin⟩ = −½ ⟨V_pot⟩</div>
+        <div class="eq-live" id="eq-V">2⟨T⟩/|⟨V⟩| = —</div>
+      </div>
+
     </div>
-    <div class="stat-group">
-        <div class="stat-label">SIM TIME</div>
-        <div class="stat-val" id="stat-time">0.0s</div>
+  </aside>
+
+  <!-- BOTTOM -->
+  <div id="bottom">
+
+    <!-- Bottom Left: Selected body -->
+    <div id="bottom-left">
+      <div class="bl-title">Selected Body</div>
+      <div id="sel-content">
+        <span class="no-selection">No body selected — click to inspect</span>
+      </div>
     </div>
-    <div class="stat-group">
-        <div class="stat-label">TOTAL MASS</div>
-        <div class="stat-val" id="stat-mass">0</div>
+
+    <!-- Bottom Center: System stats -->
+    <div id="bottom-center">
+      <div class="sys-stats">
+        <div class="sys-stat">
+          <span class="lbl">Kinetic Energy</span>
+          <span class="val cyan" id="s-ke">—</span>
+        </div>
+        <div class="sys-stat">
+          <span class="lbl">Potential Energy</span>
+          <span class="val amber" id="s-pe">—</span>
+        </div>
+        <div class="sys-stat">
+          <span class="lbl">Total Mass</span>
+          <span class="val" id="s-mass">—</span>
+        </div>
+        <div class="sys-stat">
+          <span class="lbl">Centre of Mass</span>
+          <span class="val" id="s-com">—</span>
+        </div>
+        <div class="sys-stat">
+          <span class="lbl">Max Velocity</span>
+          <span class="val green" id="s-maxv">—</span>
+        </div>
+        <div class="sys-stat">
+          <span class="lbl">Zoom Level</span>
+          <span class="val" id="s-zoom">1.00×</span>
+        </div>
+        <div class="sys-stat">
+          <span class="lbl">Collisions</span>
+          <span class="val amber" id="s-coll">0</span>
+        </div>
+        <div class="sys-stat">
+          <span class="lbl">Time Step</span>
+          <span class="val" id="s-dt">—</span>
+        </div>
+      </div>
     </div>
-    <div class="stat-group">
-        <div class="stat-label">TOTAL ENERGY</div>
-        <div class="stat-val" id="stat-tenergy">0</div>
+
+    <!-- Bottom Right: Energy graph -->
+    <div id="bottom-right">
+      <div class="br-title">Energy History</div>
+      <canvas id="energy-canvas" width="266" height="76"></canvas>
     </div>
-    <div class="stat-group">
-        <div class="stat-label">ANG. MOMENTUM</div>
-        <div class="stat-val" id="stat-angular">0</div>
-    </div>
-    <div class="stat-group">
-        <div class="stat-label">FPS</div>
-        <div class="stat-val" id="stat-fps">60</div>
-    </div>
-    <div class="stat-group">
-        <div class="stat-label">INTEGRATOR</div>
-        <div class="stat-val" style="font-size:10px; color:var(--accent3)">RK4</div>
-    </div>
+
+  </div>
+
 </div>
 
 <script>
-// ======================================================
-// ADVANCED ASTROPHYSICS SIMULATOR
-// Uses RK4 integration, real physics constants (scaled)
-// ======================================================
+// ═══════════════════════════════════════════════════════
+//  N-BODY GRAVITATIONAL DYNAMICS SIMULATOR
+//  RK4 Integration · Schwarzschild Geometry · Full HUD
+// ═══════════════════════════════════════════════════════
 
 const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-const eCanvas = document.getElementById('energy-canvas');
-const eCtx = eCanvas.getContext('2d');
+const ctx    = canvas.getContext('2d');
+const eC     = document.getElementById('energy-canvas');
+const eCtx   = eC.getContext('2d');
 
-// Scale canvas
 function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
 }
 resize();
 window.addEventListener('resize', resize);
 
-// ======================================================
-// PHYSICS CONSTANTS (scaled for simulation)
-// ======================================================
-const G = 1000;         // Gravitational constant (scaled)
-const C_LIGHT = 50000;  // Speed of light (scaled, for Schwarzschild)
-const SOFTENING = 10;   // Softening parameter (avoids singularities)
+// ── CONSTANTS ──────────────────────────────────────────
+const G        = 1000;
+const C_LIGHT  = 60000;
 
-// ======================================================
-// SIMULATION STATE
-// ======================================================
-let bodies = [];
-let paused = false;
-let simTime = 0;
-let showTrails = true;
-let showForces = false;
-let showVelocity = false;
-let showOrbit = false;
-let showEnergy = true;
-let timeSpeed = 1;
-let softening = 10;
-let addMode = null;
+// ── STATE ──────────────────────────────────────────────
+let bodies       = [];
+let paused       = false;
+let simTime      = 0;
+let timeSpeed    = 1;
+let softening    = 10;
+let trailLength  = 200;
+let addMode      = null;
 let selectedBody = null;
+let collisions   = 0;
+let showTrails   = true;
+let showForces   = false;
+let showVelocity = false;
+let showOrbit    = false;
+let showCoM      = true;
+let lastDt       = 0;
 
 // View
-let viewX = 0, viewY = 0;
-let zoom = 1;
-let isPanning = false;
-let panStartX = 0, panStartY = 0;
+let viewX = 0, viewY = 0, zoom = 1;
+let isPanning = false, panX = 0, panY = 0;
 
-// Energy history for graph
-let energyHistory = [];
-let kineticHistory = [];
-let potentialHistory = [];
-const MAX_HISTORY = 260;
+// Energy history
+const HIST = 266;
+let eTotal = [], eKin = [], ePot = [];
 
-// ======================================================
-// BODY CLASS
-// ======================================================
-let bodyIdCounter = 0;
-
+// ── BODY ───────────────────────────────────────────────
+let uid = 0;
 class Body {
-    constructor(x, y, vx, vy, mass, color, type = 'planet') {
-        this.id = bodyIdCounter++;
-        this.x = x; this.y = y;
-        this.vx = vx; this.vy = vy;
-        this.mass = mass;
-        this.color = color;
-        this.type = type; // 'planet', 'star', 'blackhole', 'neutron'
-        this.radius = this.calcRadius();
-        this.trail = [];
-        this.maxTrail = 200;
-        this.ax = 0; this.ay = 0; // acceleration
-        this.merged = false;
-        this.age = 0;
+  constructor(x, y, vx, vy, mass, color, type='planet') {
+    this.id     = uid++;
+    this.x = x; this.y = y;
+    this.vx = vx; this.vy = vy;
+    this.mass   = mass;
+    this.color  = color;
+    this.type   = type;
+    this.radius = this._r();
+    this.trail  = [];
+    this.ax = 0; this.ay = 0;
+    this.age    = 0;
+    this.merged = false;
+  }
+
+  _r() {
+    const base = Math.pow(this.mass, 0.33);
+    if (this.type === 'blackhole') return Math.max(9,  base / 18);
+    if (this.type === 'star')      return Math.max(5,  base / 14);
+    if (this.type === 'neutron')   return Math.max(3,  base / 24);
+    return Math.max(2, base / 28);
+  }
+
+  rs()       { return 2 * G * this.mass / (C_LIGHT * C_LIGHT); }
+  vEsc(r)    { return Math.sqrt(2 * G * this.mass / r); }
+  ke()       { return 0.5 * this.mass * (this.vx*this.vx + this.vy*this.vy); }
+  speed()    { return Math.sqrt(this.vx*this.vx + this.vy*this.vy); }
+  L(cx, cy)  { return this.mass * ((this.x-cx)*this.vy - (this.y-cy)*this.vx); }
+
+  step(dt) {
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+    this.age += dt;
+    if (showTrails) {
+      this.trail.push({x: this.x, y: this.y});
+      if (this.trail.length > trailLength) this.trail.shift();
+    }
+  }
+
+  draw() {
+    const s  = w2s(this.x, this.y);
+    const sx = s.x, sy = s.y;
+    const sr = Math.max(this.radius * zoom, 1.5);
+
+    // Trail
+    if (showTrails && this.trail.length > 1) {
+      ctx.save();
+      ctx.strokeStyle = this.color;
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      const t = this.trail;
+      for (let i = 0; i < t.length; i++) {
+        const p = w2s(t[i].x, t[i].y);
+        i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+      }
+      ctx.globalAlpha = 0.2;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.restore();
     }
 
-    calcRadius() {
-        if (this.type === 'blackhole') return Math.max(8, Math.pow(this.mass, 0.33) / 20);
-        if (this.type === 'star') return Math.max(5, Math.pow(this.mass, 0.33) / 15);
-        if (this.type === 'neutron') return Math.max(3, Math.pow(this.mass, 0.33) / 25);
-        return Math.max(2, Math.pow(this.mass, 0.33) / 30);
-    }
+    // Black hole
+    if (this.type === 'blackhole') {
+      // Accretion disk
+      const ad = ctx.createRadialGradient(sx, sy, sr*0.6, sx, sy, sr*5);
+      ad.addColorStop(0,   'rgba(240,160,20,0.7)');
+      ad.addColorStop(0.25,'rgba(200,60,10,0.35)');
+      ad.addColorStop(0.6, 'rgba(80,10,80,0.15)');
+      ad.addColorStop(1,   'transparent');
+      ctx.fillStyle = ad;
+      ctx.save();
+      ctx.translate(sx, sy);
+      ctx.scale(1, 0.35);
+      ctx.rotate(0.6);
+      ctx.beginPath();
+      ctx.arc(0, 0, sr*5, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
 
-    schwarzschildRadius() {
-        return (2 * G * this.mass) / (C_LIGHT * C_LIGHT);
-    }
+      // Event horizon
+      const eh = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr*1.6);
+      eh.addColorStop(0, '#000000');
+      eh.addColorStop(0.7, '#000000');
+      eh.addColorStop(1, 'rgba(180,60,0,0.4)');
+      ctx.fillStyle = eh;
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr*1.6, 0, Math.PI*2);
+      ctx.fill();
 
-    escapeVelocity(r) {
-        return Math.sqrt(2 * G * this.mass / r);
-    }
+      // Photon sphere ring
+      ctx.strokeStyle = 'rgba(220,140,20,0.25)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2,4]);
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr*3, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.setLineDash([]);
 
-    kineticEnergy() {
-        return 0.5 * this.mass * (this.vx * this.vx + this.vy * this.vy);
-    }
-
-    angularMomentum(cx, cy) {
-        const rx = this.x - cx, ry = this.y - cy;
-        return this.mass * (rx * this.vy - ry * this.vx);
-    }
-
-    speed() {
-        return Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-    }
-
-    update(dt) {
-        this.x += this.vx * dt;
-        this.y += this.vy * dt;
-        this.age += dt;
-
-        if (showTrails) {
-            this.trail.push({ x: this.x, y: this.y });
-            if (this.trail.length > this.maxTrail) this.trail.shift();
-        }
-    }
-
-    draw() {
-        const sx = worldToScreen(this.x, this.y).x;
-        const sy = worldToScreen(this.x, this.y).y;
-        const sr = this.radius * zoom;
-
-        // Trail
-        if (showTrails && this.trail.length > 1) {
-            ctx.save();
-            ctx.strokeStyle = this.color;
-            ctx.lineWidth = 0.8;
-            ctx.beginPath();
-            for (let i = 0; i < this.trail.length; i++) {
-                const p = worldToScreen(this.trail[i].x, this.trail[i].y);
-                const alpha = i / this.trail.length;
-                if (i === 0) ctx.moveTo(p.x, p.y);
-                else ctx.lineTo(p.x, p.y);
-            }
-            ctx.globalAlpha = 0.25;
-            ctx.stroke();
-            ctx.restore();
-        }
-
-        // Black hole special rendering
-        if (this.type === 'blackhole') {
-            // Accretion disk
-            const grad = ctx.createRadialGradient(sx, sy, sr * 0.5, sx, sy, sr * 4);
-            grad.addColorStop(0, 'rgba(255,140,0,0.8)');
-            grad.addColorStop(0.3, 'rgba(255,60,0,0.4)');
-            grad.addColorStop(0.7, 'rgba(100,0,100,0.2)');
-            grad.addColorStop(1, 'transparent');
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.ellipse(sx, sy, sr * 4, sr * 1.5, Math.PI / 4, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Event horizon
-            ctx.fillStyle = '#000';
-            ctx.beginPath();
-            ctx.arc(sx, sy, sr, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Photon sphere glow
-            const glow = ctx.createRadialGradient(sx, sy, sr, sx, sy, sr * 2.5);
-            glow.addColorStop(0, 'rgba(255,100,0,0.6)');
-            glow.addColorStop(1, 'transparent');
-            ctx.fillStyle = glow;
-            ctx.beginPath();
-            ctx.arc(sx, sy, sr * 2.5, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Schwarzschild ring
-            ctx.strokeStyle = 'rgba(255,200,0,0.3)';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([3, 3]);
-            ctx.beginPath();
-            ctx.arc(sx, sy, this.schwarzschildRadius() * zoom * 2, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.setLineDash([]);
-            return;
-        }
-
-        // Neutron star
-        if (this.type === 'neutron') {
-            const pulse = 0.5 + 0.5 * Math.sin(this.age * 10);
-            const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr * 3);
-            grad.addColorStop(0, '#ffffff');
-            grad.addColorStop(0.3, '#88aaff');
-            grad.addColorStop(1, 'transparent');
-            ctx.fillStyle = grad;
-            ctx.globalAlpha = 0.3 + pulse * 0.4;
-            ctx.beginPath();
-            ctx.arc(sx, sy, sr * 3, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.globalAlpha = 1;
-        }
-
-        // Star glow
-        if (this.type === 'star') {
-            const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr * 4);
-            glow.addColorStop(0, this.color);
-            glow.addColorStop(0.4, this.color + '66');
-            glow.addColorStop(1, 'transparent');
-            ctx.fillStyle = glow;
-            ctx.beginPath();
-            ctx.arc(sx, sy, sr * 4, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        // Regular glow
-        const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, Math.max(sr * 2, 6));
-        g.addColorStop(0, this.color);
-        g.addColorStop(1, 'transparent');
-        ctx.fillStyle = g;
+      // Schwarzschild radius indicator
+      if (this.rs() * zoom > 4) {
+        ctx.strokeStyle = 'rgba(200,80,20,0.15)';
+        ctx.lineWidth = 0.5;
         ctx.beginPath();
-        ctx.arc(sx, sy, Math.max(sr * 2, 6), 0, Math.PI * 2);
-        ctx.fill();
-
-        // Core
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(sx, sy, Math.max(sr, 2), 0, Math.PI * 2);
-        ctx.fill();
-
-        // Force vectors
-        if (showForces && (this.ax !== 0 || this.ay !== 0)) {
-            const scale = 2000;
-            ctx.strokeStyle = '#ff6b35';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.moveTo(sx, sy);
-            ctx.lineTo(sx + this.ax * scale * zoom, sy + this.ay * scale * zoom);
-            ctx.stroke();
-            // Arrow
-            ctx.fillStyle = '#ff6b35';
-            const angle = Math.atan2(this.ay, this.ax);
-            ctx.save();
-            ctx.translate(sx + this.ax * scale * zoom, sy + this.ay * scale * zoom);
-            ctx.rotate(angle);
-            ctx.beginPath();
-            ctx.moveTo(6, 0);
-            ctx.lineTo(-4, 3);
-            ctx.lineTo(-4, -3);
-            ctx.closePath();
-            ctx.fill();
-            ctx.restore();
-        }
-
-        // Velocity vectors
-        if (showVelocity) {
-            const scale = 8;
-            ctx.strokeStyle = '#00f5ff';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([4, 2]);
-            ctx.beginPath();
-            ctx.moveTo(sx, sy);
-            ctx.lineTo(sx + this.vx * scale * zoom, sy + this.vy * scale * zoom);
-            ctx.stroke();
-            ctx.setLineDash([]);
-        }
-
-        // Selection ring
-        if (selectedBody && selectedBody.id === this.id) {
-            ctx.strokeStyle = '#00f5ff';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.arc(sx, sy, Math.max(sr, 6) + 5, 0, Math.PI * 2);
-            ctx.stroke();
-
-            // Label
-            ctx.fillStyle = '#00f5ff';
-            ctx.font = '9px Space Mono';
-            ctx.fillText(`m=${this.mass.toFixed(0)} v=${this.speed().toFixed(1)}`, sx + Math.max(sr, 6) + 8, sy);
-        }
+        ctx.arc(sx, sy, this.rs() * zoom * 1.5, 0, Math.PI*2);
+        ctx.stroke();
+      }
+      this._drawOverlays(sx, sy, sr);
+      return;
     }
-}
 
-// ======================================================
-// RK4 INTEGRATION
-// Much more accurate than Euler integration!
-// ======================================================
-function computeAccelerations(state) {
-    const n = state.length;
-    const accels = new Array(n).fill(null).map(() => ({ ax: 0, ay: 0 }));
-
-    for (let i = 0; i < n; i++) {
-        for (let j = i + 1; j < n; j++) {
-            const dx = state[j].x - state[i].x;
-            const dy = state[j].y - state[i].y;
-            const distSq = dx * dx + dy * dy + softening * softening;
-            const dist = Math.sqrt(distSq);
-            const dist3 = distSq * dist;
-
-            const f_ij = G * state[i].mass * state[j].mass / dist3;
-
-            accels[i].ax += f_ij * dx / state[i].mass;
-            accels[i].ay += f_ij * dy / state[i].mass;
-            accels[j].ax -= f_ij * dx / state[j].mass;
-            accels[j].ay -= f_ij * dy / state[j].mass;
-        }
+    // Neutron star
+    if (this.type === 'neutron') {
+      const pulse = 0.5 + 0.5 * Math.sin(this.age * 8);
+      const ng = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr*4);
+      ng.addColorStop(0, '#ffffff');
+      ng.addColorStop(0.2, '#aac8ff');
+      ng.addColorStop(0.5, 'rgba(100,140,255,0.3)');
+      ng.addColorStop(1, 'transparent');
+      ctx.globalAlpha = 0.2 + pulse*0.5;
+      ctx.fillStyle = ng;
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr*4, 0, Math.PI*2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
     }
-    return accels;
-}
 
-function rk4Step(bodies, dt) {
-    const n = bodies.length;
-
-    // State: [{x, y, vx, vy, mass}, ...]
-    const state0 = bodies.map(b => ({ x: b.x, y: b.y, vx: b.vx, vy: b.vy, mass: b.mass }));
-
-    // k1
-    const a1 = computeAccelerations(state0);
-    const k1 = state0.map((s, i) => ({
-        dx: s.vx, dy: s.vy,
-        dvx: a1[i].ax, dvy: a1[i].ay
-    }));
-
-    // k2
-    const state2 = state0.map((s, i) => ({
-        x: s.x + 0.5 * dt * k1[i].dx,
-        y: s.y + 0.5 * dt * k1[i].dy,
-        vx: s.vx + 0.5 * dt * k1[i].dvx,
-        vy: s.vy + 0.5 * dt * k1[i].dvy,
-        mass: s.mass
-    }));
-    const a2 = computeAccelerations(state2);
-    const k2 = state2.map((s, i) => ({
-        dx: s.vx, dy: s.vy,
-        dvx: a2[i].ax, dvy: a2[i].ay
-    }));
-
-    // k3
-    const state3 = state0.map((s, i) => ({
-        x: s.x + 0.5 * dt * k2[i].dx,
-        y: s.y + 0.5 * dt * k2[i].dy,
-        vx: s.vx + 0.5 * dt * k2[i].dvx,
-        vy: s.vy + 0.5 * dt * k2[i].dvy,
-        mass: s.mass
-    }));
-    const a3 = computeAccelerations(state3);
-    const k3 = state3.map((s, i) => ({
-        dx: s.vx, dy: s.vy,
-        dvx: a3[i].ax, dvy: a3[i].ay
-    }));
-
-    // k4
-    const state4 = state0.map((s, i) => ({
-        x: s.x + dt * k3[i].dx,
-        y: s.y + dt * k3[i].dy,
-        vx: s.vx + dt * k3[i].dvx,
-        vy: s.vy + dt * k3[i].dvy,
-        mass: s.mass
-    }));
-    const a4 = computeAccelerations(state4);
-    const k4 = state4.map((s, i) => ({
-        dx: s.vx, dy: s.vy,
-        dvx: a4[i].ax, dvy: a4[i].ay
-    }));
-
-    // Update bodies with RK4 combination
-    bodies.forEach((b, i) => {
-        b.x += dt / 6 * (k1[i].dx + 2*k2[i].dx + 2*k3[i].dx + k4[i].dx);
-        b.y += dt / 6 * (k1[i].dy + 2*k2[i].dy + 2*k3[i].dy + k4[i].dy);
-        b.vx += dt / 6 * (k1[i].dvx + 2*k2[i].dvx + 2*k3[i].dvx + k4[i].dvx);
-        b.vy += dt / 6 * (k1[i].dvy + 2*k2[i].dvy + 2*k3[i].dvy + k4[i].dvy);
-        b.ax = a1[i].ax;
-        b.ay = a1[i].ay;
-    });
-}
-
-// ======================================================
-// COLLISION & MERGING
-// ======================================================
-function checkCollisions() {
-    for (let i = 0; i < bodies.length; i++) {
-        for (let j = i + 1; j < bodies.length; j++) {
-            const b1 = bodies[i], b2 = bodies[j];
-            if (b1.merged || b2.merged) continue;
-
-            const dx = b2.x - b1.x;
-            const dy = b2.y - b1.y;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            const mergeRadius = (b1.radius + b2.radius) * 0.6;
-
-            if (dist < mergeRadius) {
-                // Conserve momentum
-                const totalMass = b1.mass + b2.mass;
-                const newVx = (b1.mass * b1.vx + b2.mass * b2.vx) / totalMass;
-                const newVy = (b1.mass * b1.vy + b2.mass * b2.vy) / totalMass;
-                const newX = (b1.mass * b1.x + b2.mass * b2.x) / totalMass;
-                const newY = (b1.mass * b1.y + b2.mass * b2.y) / totalMass;
-
-                // Larger body survives
-                const survivor = b1.mass >= b2.mass ? b1 : b2;
-                const victim = b1.mass >= b2.mass ? b2 : b1;
-
-                survivor.mass = totalMass;
-                survivor.vx = newVx; survivor.vy = newVy;
-                survivor.x = newX; survivor.y = newY;
-                survivor.radius = survivor.calcRadius();
-
-                // Upgrade type if black hole absorbed a star
-                if (victim.type === 'blackhole' || (totalMass > 20000 && survivor.type !== 'blackhole')) {
-                    survivor.type = 'blackhole';
-                    survivor.color = '#ff6600';
-                }
-
-                victim.merged = true;
-
-                if (selectedBody && selectedBody.id === victim.id) {
-                    selectedBody = survivor;
-                }
-            }
-        }
+    // Star corona
+    if (this.type === 'star') {
+      const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr*4.5);
+      sg.addColorStop(0, this.color);
+      sg.addColorStop(0.3, this.color + '44');
+      sg.addColorStop(1, 'transparent');
+      ctx.fillStyle = sg;
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr*4.5, 0, Math.PI*2);
+      ctx.fill();
     }
-    bodies = bodies.filter(b => !b.merged);
-}
 
-// ======================================================
-// PHYSICS CALCULATIONS
-// ======================================================
-function totalKineticEnergy() {
-    return bodies.reduce((sum, b) => sum + b.kineticEnergy(), 0);
-}
+    // Core glow
+    const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, Math.max(sr*2.2, 5));
+    g.addColorStop(0, this.color + 'cc');
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(sx, sy, Math.max(sr*2.2, 5), 0, Math.PI*2);
+    ctx.fill();
 
-function totalPotentialEnergy() {
-    let pe = 0;
-    for (let i = 0; i < bodies.length; i++) {
-        for (let j = i + 1; j < bodies.length; j++) {
-            const dx = bodies[j].x - bodies[i].x;
-            const dy = bodies[j].y - bodies[i].y;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            pe -= G * bodies[i].mass * bodies[j].mass / dist;
-        }
+    // Hard core
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.arc(sx, sy, Math.max(sr, 1.5), 0, Math.PI*2);
+    ctx.fill();
+
+    this._drawOverlays(sx, sy, sr);
+  }
+
+  _drawOverlays(sx, sy, sr) {
+    // Force vector
+    if (showForces && (this.ax || this.ay)) {
+      const sc = 1800;
+      const ex = sx + this.ax * sc * zoom;
+      const ey = sy + this.ay * sc * zoom;
+      ctx.strokeStyle = '#e04848';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.stroke();
+      const ang = Math.atan2(this.ay, this.ax);
+      ctx.save();
+      ctx.translate(ex, ey); ctx.rotate(ang);
+      ctx.fillStyle = '#e04848';
+      ctx.beginPath(); ctx.moveTo(5,0); ctx.lineTo(-3,2.5); ctx.lineTo(-3,-2.5); ctx.closePath(); ctx.fill();
+      ctx.restore();
     }
-    return pe;
+
+    // Velocity vector
+    if (showVelocity) {
+      const sc = 7;
+      ctx.strokeStyle = '#40c8e0';
+      ctx.lineWidth = 0.8;
+      ctx.setLineDash([3,3]);
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(sx + this.vx*sc*zoom, sy + this.vy*sc*zoom);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Selection ring
+    if (selectedBody && selectedBody.id === this.id) {
+      ctx.strokeStyle = '#40c8e0';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4,4]);
+      ctx.beginPath();
+      ctx.arc(sx, sy, Math.max(sr, 6) + 8, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = '#40c8e0';
+      ctx.font = '400 9px IBM Plex Mono';
+      ctx.fillText(`${this.type.toUpperCase()}  m=${this.mass.toFixed(0)}  v=${this.speed().toFixed(2)}`, sx + Math.max(sr,6) + 14, sy + 3);
+    }
+  }
 }
 
-function totalAngularMomentum() {
-    const cm = centerOfMass();
-    return bodies.reduce((sum, b) => sum + b.angularMomentum(cm.x, cm.y), 0);
+// ── RK4 INTEGRATOR ─────────────────────────────────────
+function accels(state) {
+  const n = state.length;
+  const a = Array.from({length:n}, () => ({ax:0,ay:0}));
+  for (let i = 0; i < n; i++) {
+    for (let j = i+1; j < n; j++) {
+      const dx = state[j].x - state[i].x;
+      const dy = state[j].y - state[i].y;
+      const d2 = dx*dx + dy*dy + softening*softening;
+      const d  = Math.sqrt(d2);
+      const d3 = d2 * d;
+      const f  = G * state[i].mass * state[j].mass / d3;
+      a[i].ax += f*dx/state[i].mass; a[i].ay += f*dy/state[i].mass;
+      a[j].ax -= f*dx/state[j].mass; a[j].ay -= f*dy/state[j].mass;
+    }
+  }
+  return a;
 }
 
-function centerOfMass() {
-    let totalMass = 0, cmX = 0, cmY = 0;
-    bodies.forEach(b => {
-        totalMass += b.mass;
-        cmX += b.x * b.mass;
-        cmY += b.y * b.mass;
-    });
-    return { x: cmX / totalMass, y: cmY / totalMass };
+function rk4(bods, dt) {
+  const s0 = bods.map(b => ({x:b.x,y:b.y,vx:b.vx,vy:b.vy,mass:b.mass}));
+  const a1 = accels(s0);
+  const k1 = s0.map((s,i) => ({dx:s.vx,dy:s.vy,dvx:a1[i].ax,dvy:a1[i].ay}));
+
+  const s2 = s0.map((s,i) => ({x:s.x+0.5*dt*k1[i].dx, y:s.y+0.5*dt*k1[i].dy, vx:s.vx+0.5*dt*k1[i].dvx, vy:s.vy+0.5*dt*k1[i].dvy, mass:s.mass}));
+  const a2 = accels(s2);
+  const k2 = s2.map((s,i) => ({dx:s.vx,dy:s.vy,dvx:a2[i].ax,dvy:a2[i].ay}));
+
+  const s3 = s0.map((s,i) => ({x:s.x+0.5*dt*k2[i].dx, y:s.y+0.5*dt*k2[i].dy, vx:s.vx+0.5*dt*k2[i].dvx, vy:s.vy+0.5*dt*k2[i].dvy, mass:s.mass}));
+  const a3 = accels(s3);
+  const k3 = s3.map((s,i) => ({dx:s.vx,dy:s.vy,dvx:a3[i].ax,dvy:a3[i].ay}));
+
+  const s4 = s0.map((s,i) => ({x:s.x+dt*k3[i].dx, y:s.y+dt*k3[i].dy, vx:s.vx+dt*k3[i].dvx, vy:s.vy+dt*k3[i].dvy, mass:s.mass}));
+  const a4 = accels(s4);
+  const k4 = s4.map((s,i) => ({dx:s.vx,dy:s.vy,dvx:a4[i].ax,dvy:a4[i].ay}));
+
+  bods.forEach((b,i) => {
+    b.x  += dt/6*(k1[i].dx  + 2*k2[i].dx  + 2*k3[i].dx  + k4[i].dx);
+    b.y  += dt/6*(k1[i].dy  + 2*k2[i].dy  + 2*k3[i].dy  + k4[i].dy);
+    b.vx += dt/6*(k1[i].dvx + 2*k2[i].dvx + 2*k3[i].dvx + k4[i].dvx);
+    b.vy += dt/6*(k1[i].dvy + 2*k2[i].dvy + 2*k3[i].dvy + k4[i].dvy);
+    b.ax = a1[i].ax; b.ay = a1[i].ay;
+  });
 }
 
-// ======================================================
-// PRESETS
-// ======================================================
+// ── MERGING ────────────────────────────────────────────
+function merge() {
+  for (let i = 0; i < bodies.length; i++) {
+    for (let j = i+1; j < bodies.length; j++) {
+      const a = bodies[i], b = bodies[j];
+      if (a.merged || b.merged) continue;
+      const dx = b.x-a.x, dy = b.y-a.y;
+      if (Math.sqrt(dx*dx+dy*dy) < (a.radius+b.radius)*0.55) {
+        const M = a.mass + b.mass;
+        const s = a.mass >= b.mass ? a : b;
+        const v = a.mass >= b.mass ? b : a;
+        s.x  = (a.mass*a.x  + b.mass*b.x)  / M;
+        s.y  = (a.mass*a.y  + b.mass*b.y)  / M;
+        s.vx = (a.mass*a.vx + b.mass*b.vx) / M;
+        s.vy = (a.mass*a.vy + b.mass*b.vy) / M;
+        s.mass = M;
+        if (M > 18000 || v.type === 'blackhole') { s.type = 'blackhole'; s.color = '#c04000'; }
+        s.radius = s._r();
+        v.merged = true;
+        collisions++;
+        if (selectedBody?.id === v.id) selectedBody = s;
+      }
+    }
+  }
+  bodies = bodies.filter(b => !b.merged);
+}
+
+// ── PHYSICS SUMMARIES ──────────────────────────────────
+function ke()  { return bodies.reduce((s,b) => s + b.ke(), 0); }
+function pe()  {
+  let p = 0;
+  for (let i = 0; i < bodies.length; i++)
+    for (let j = i+1; j < bodies.length; j++) {
+      const dx = bodies[j].x-bodies[i].x, dy = bodies[j].y-bodies[i].y;
+      p -= G * bodies[i].mass * bodies[j].mass / Math.sqrt(dx*dx+dy*dy);
+    }
+  return p;
+}
+function L() {
+  const cm = CoM();
+  return bodies.reduce((s,b) => s + b.L(cm.x, cm.y), 0);
+}
+function CoM() {
+  let M=0, cx=0, cy=0;
+  bodies.forEach(b => { M+=b.mass; cx+=b.x*b.mass; cy+=b.y*b.mass; });
+  return { x: cx/M, y: cy/M };
+}
+
+// ── VIEW ───────────────────────────────────────────────
+function w2s(wx, wy) {
+  return { x: (wx-viewX)*zoom + canvas.width/2, y: (wy-viewY)*zoom + canvas.height/2 };
+}
+function s2w(sx, sy) {
+  return { x: (sx - canvas.width/2)/zoom + viewX, y: (sy - canvas.height/2)/zoom + viewY };
+}
+
+// ── PRESETS ────────────────────────────────────────────
 function loadPreset(name) {
-    bodies = [];
-    simTime = 0;
-    energyHistory = [];
-    kineticHistory = [];
-    potentialHistory = [];
-    selectedBody = null;
+  bodies = []; simTime = 0; collisions = 0;
+  eTotal = []; eKin = []; ePot = [];
+  selectedBody = null;
+  document.getElementById('sel-content').innerHTML = '<span class="no-selection">No body selected — click to inspect</span>';
+  const cx = canvas.width/2, cy = canvas.height/2;
 
-    const cx = canvas.width / 2, cy = canvas.height / 2;
+  if (name === 'solar') {
+    bodies.push(new Body(cx, cy, 0, 0, 10000, '#f0b030', 'star'));
+    [{r:100,v:8,m:80,c:'#8a7060'},{r:140,v:6,m:180,c:'#c8a060'},{r:180,v:5,m:200,c:'#4080c0'},
+     {r:220,v:4,m:120,c:'#c06040'},{r:300,v:2.5,m:800,c:'#c0a060'},{r:370,v:2,m:400,c:'#d0b888'}]
+    .forEach(p => bodies.push(new Body(cx+p.r, cy, 0, p.v, p.m, p.c, 'planet')));
+  }
 
-    if (name === 'solar') {
-        bodies.push(new Body(cx, cy, 0, 0, 10000, '#FDB813', 'star'));
-        const planets = [
-            { r: 100, v: 8, m: 80, c: '#8C7853', t: 'planet' },
-            { r: 140, v: 6, m: 180, c: '#FFC649', t: 'planet' },
-            { r: 180, v: 5, m: 200, c: '#4A90E2', t: 'planet' },
-            { r: 220, v: 4, m: 120, c: '#E27B58', t: 'planet' },
-            { r: 300, v: 2.5, m: 800, c: '#C88B3A', t: 'planet' },
-            { r: 370, v: 2, m: 400, c: '#FAD5A5', t: 'planet' },
-        ];
-        planets.forEach(p => bodies.push(new Body(cx + p.r, cy, 0, p.v, p.m, p.c, p.t)));
+  else if (name === 'binary') {
+    bodies.push(new Body(cx-120, cy, 0,  3.5, 6000, '#f0c040', 'star'));
+    bodies.push(new Body(cx+120, cy, 0, -3.5, 6000, '#e06030', 'star'));
+    for (let i = 0; i < 30; i++) {
+      const a = (i/30)*Math.PI*2, r = 180 + Math.random()*80;
+      const v = Math.sqrt(G*12000/r)*0.7;
+      bodies.push(new Body(cx+Math.cos(a)*r, cy+Math.sin(a)*r, -Math.sin(a)*v, Math.cos(a)*v, 50, '#508868', 'planet'));
     }
+  }
 
-    else if (name === 'binary') {
-        bodies.push(new Body(cx - 120, cy, 0, 3.5, 6000, '#FFD700', 'star'));
-        bodies.push(new Body(cx + 120, cy, 0, -3.5, 6000, '#FF6B6B', 'star'));
-        for (let i = 0; i < 30; i++) {
-            const a = (i / 30) * Math.PI * 2;
-            const r = 180 + Math.random() * 80;
-            const x = cx + Math.cos(a) * r;
-            const y = cy + Math.sin(a) * r;
-            const v = Math.sqrt(G * 12000 / r) * 0.7;
-            bodies.push(new Body(x, y, -Math.sin(a)*v, Math.cos(a)*v, 50, '#90EE90', 'planet'));
-        }
+  else if (name === 'blackhole') {
+    bodies.push(new Body(cx, cy, 0, 0, 30000, '#c04000', 'blackhole'));
+    const cols = ['#f0c040','#e04040','#40b0e0','#e060a0','#80d090'];
+    for (let i = 0; i < 8; i++) {
+      const a = (i/8)*Math.PI*2, r = 120+i*28;
+      const v = Math.sqrt(G*30000/r);
+      bodies.push(new Body(cx+Math.cos(a)*r, cy+Math.sin(a)*r, -Math.sin(a)*v, Math.cos(a)*v, 300, cols[i%5], 'star'));
     }
+    bodies.push(new Body(cx+350, cy, 0, Math.sqrt(G*30000/350)*0.9, 2000, '#a0b0d0', 'neutron'));
+  }
 
-    else if (name === 'blackhole') {
-        // Central black hole
-        bodies.push(new Body(cx, cy, 0, 0, 30000, '#ff6600', 'blackhole'));
-        // Orbiting stars
-        const starColors = ['#FFD700', '#FF6B6B', '#00BFFF', '#FF69B4', '#98FB98'];
-        for (let i = 0; i < 8; i++) {
-            const a = (i / 8) * Math.PI * 2;
-            const r = 120 + i * 30;
-            const x = cx + Math.cos(a) * r;
-            const y = cy + Math.sin(a) * r;
-            const v = Math.sqrt(G * 30000 / r);
-            const col = starColors[i % starColors.length];
-            bodies.push(new Body(x, y, -Math.sin(a)*v, Math.cos(a)*v, 300, col, 'star'));
-        }
-        // Neutron star
-        bodies.push(new Body(cx + 350, cy, 0, Math.sqrt(G * 30000 / 350) * 0.9, 2000, '#aaaaff', 'neutron'));
-    }
+  else if (name === 'galaxy') {
+    mkGalaxy(cx-180, cy-80,  1.5,  1,   '#d0a030');
+    mkGalaxy(cx+180, cy+80, -1.5, -1,   '#4080b0');
+  }
 
-    else if (name === 'galaxy') {
-        makeGalaxy(cx - 180, cy - 80, 1.5, 1, '#FFD700');
-        makeGalaxy(cx + 180, cy + 80, -1.5, -1, '#FF69B4');
+  else if (name === 'lagrange') {
+    bodies.push(new Body(cx, cy, 0, 0, 10000, '#f0b030', 'star'));
+    bodies.push(new Body(cx+200, cy, 0, Math.sqrt(G*10000/200), 1000, '#c09040', 'planet'));
+    const r=200, vL=Math.sqrt(G*11000/r);
+    for (let i = 0; i < 8; i++) {
+      const jit=20;
+      bodies.push(new Body(cx+r*Math.cos(Math.PI/3)+(Math.random()-.5)*jit, cy+r*Math.sin(Math.PI/3)+(Math.random()-.5)*jit, -Math.sin(Math.PI/3)*vL, Math.cos(Math.PI/3)*vL, 20, '#30a870', 'planet'));
     }
+    for (let i = 0; i < 8; i++) {
+      const jit=20;
+      bodies.push(new Body(cx+r*Math.cos(-Math.PI/3)+(Math.random()-.5)*jit, cy+r*Math.sin(-Math.PI/3)+(Math.random()-.5)*jit, -Math.sin(-Math.PI/3)*vL, Math.cos(-Math.PI/3)*vL, 20, '#a030a0', 'planet'));
+    }
+  }
 
-    else if (name === 'lagrange') {
-        // Sun + Jupiter + Test particles at L4, L5 Lagrange points
-        bodies.push(new Body(cx, cy, 0, 0, 10000, '#FDB813', 'star'));
-        bodies.push(new Body(cx + 200, cy, 0, Math.sqrt(G * 10000 / 200), 1000, '#C88B3A', 'planet'));
-        // L4 point (60° ahead)
-        const r = 200;
-        const l4x = cx + r * Math.cos(Math.PI / 3);
-        const l4y = cy + r * Math.sin(Math.PI / 3);
-        const l5x = cx + r * Math.cos(-Math.PI / 3);
-        const l5y = cy + r * Math.sin(-Math.PI / 3);
-        const vL = Math.sqrt(G * 11000 / r);
-        // Trojans at L4
-        for (let i = 0; i < 8; i++) {
-            const jitter = 20;
-            bodies.push(new Body(
-                l4x + (Math.random()-0.5)*jitter,
-                l4y + (Math.random()-0.5)*jitter,
-                -Math.sin(Math.PI/3)*vL,
-                Math.cos(Math.PI/3)*vL,
-                20, '#00FFAA', 'planet'
-            ));
-        }
-        // Trojans at L5
-        for (let i = 0; i < 8; i++) {
-            const jitter = 20;
-            bodies.push(new Body(
-                l5x + (Math.random()-0.5)*jitter,
-                l5y + (Math.random()-0.5)*jitter,
-                -Math.sin(-Math.PI/3)*vL,
-                Math.cos(-Math.PI/3)*vL,
-                20, '#FF00AA', 'planet'
-            ));
-        }
-    }
-
-    else if (name === 'chaos') {
-        const cols = ['#FF6B6B','#4ECDC4','#FFE66D','#95E1D3','#FF8B94','#A8DADC','#F7B731'];
-        for (let i = 0; i < 20; i++) {
-            bodies.push(new Body(
-                cx + (Math.random()-0.5)*400,
-                cy + (Math.random()-0.5)*400,
-                (Math.random()-0.5)*6,
-                (Math.random()-0.5)*6,
-                300 + Math.random()*700,
-                cols[i % cols.length],
-                Math.random() > 0.8 ? 'star' : 'planet'
-            ));
-        }
-    }
+  else if (name === 'chaos') {
+    const cols = ['#c05050','#40a0a0','#c0c040','#8080c0','#c07040','#40c080','#c04080'];
+    for (let i = 0; i < 20; i++)
+      bodies.push(new Body(cx+(Math.random()-.5)*400, cy+(Math.random()-.5)*400, (Math.random()-.5)*6, (Math.random()-.5)*6, 300+Math.random()*700, cols[i%7], Math.random()>.8?'star':'planet'));
+  }
 }
 
-function makeGalaxy(cx, cy, vx, vy, col) {
-    bodies.push(new Body(cx, cy, vx, vy, 15000, '#ff6600', 'blackhole'));
-    for (let i = 0; i < 50; i++) {
-        const a = Math.random() * Math.PI * 2;
-        const r = 60 + Math.random() * 120;
-        const x = cx + Math.cos(a) * r;
-        const y = cy + Math.sin(a) * r;
-        const v = Math.sqrt(G * 15000 / r) * (0.5 + Math.random() * 0.5);
-        bodies.push(new Body(x, y, vx - Math.sin(a)*v, vy + Math.cos(a)*v, 100, col, 'star'));
-    }
+function mkGalaxy(cx, cy, vx, vy, col) {
+  bodies.push(new Body(cx, cy, vx, vy, 15000, '#c04000', 'blackhole'));
+  for (let i = 0; i < 50; i++) {
+    const a = Math.random()*Math.PI*2, r = 60+Math.random()*120;
+    const v = Math.sqrt(G*15000/r)*(0.5+Math.random()*0.5);
+    bodies.push(new Body(cx+Math.cos(a)*r, cy+Math.sin(a)*r, vx-Math.sin(a)*v, vy+Math.cos(a)*v, 100, col, 'star'));
+  }
 }
 
-// ======================================================
-// VIEW TRANSFORMS
-// ======================================================
-function worldToScreen(wx, wy) {
-    return {
-        x: (wx - viewX) * zoom + canvas.width / 2,
-        y: (wy - viewY) * zoom + canvas.height / 2
-    };
-}
-
-function screenToWorld(sx, sy) {
-    return {
-        x: (sx - canvas.width / 2) / zoom + viewX,
-        y: (sy - canvas.height / 2) / zoom + viewY
-    };
-}
-
-// ======================================================
-// INTERACTION
-// ======================================================
-let isDragging = false, dragStartX = 0, dragStartY = 0;
-let mouseX = 0, mouseY = 0;
-
-canvas.addEventListener('mousedown', e => {
-    const w = screenToWorld(e.clientX, e.clientY);
-
-    if (e.button === 2) { // Right click = pan
-        isPanning = true;
-        panStartX = e.clientX - viewX * zoom;
-        panStartY = e.clientY - viewY * zoom;
-        return;
-    }
-
-    if (addMode) {
-        dragStartX = w.x; dragStartY = w.y;
-        isDragging = true;
-        return;
-    }
-
-    // Select body
-    selectedBody = null;
-    for (let b of bodies) {
-        const dx = b.x - w.x, dy = b.y - w.y;
-        if (Math.sqrt(dx*dx + dy*dy) < b.radius + 10 / zoom) {
-            selectedBody = b;
-            break;
-        }
-    }
-    document.getElementById('body-info').style.display = selectedBody ? 'block' : 'none';
-});
-
-canvas.addEventListener('mousemove', e => {
-    mouseX = e.clientX; mouseY = e.clientY;
-
-    if (isPanning) {
-        viewX = (e.clientX - panStartX) / zoom;
-        viewY = (e.clientY - panStartY) / zoom;
-    }
-});
-
-canvas.addEventListener('mouseup', e => {
-    if (isPanning) { isPanning = false; return; }
-
-    if (isDragging && addMode) {
-        const w = screenToWorld(e.clientX, e.clientY);
-        const vx = (dragStartX - w.x) * 0.05;
-        const vy = (dragStartY - w.y) * 0.05;
-
-        let mass, color, type;
-        if (addMode === 'blackhole_add') {
-            mass = 20000; color = '#ff6600'; type = 'blackhole';
-        } else if (addMode === 'star') {
-            mass = 3000 + Math.random()*2000; color = '#FFD700'; type = 'star';
-        } else {
-            mass = 100 + Math.random()*200; color = '#00f5ff'; type = 'planet';
-        }
-        bodies.push(new Body(dragStartX, dragStartY, vx, vy, mass, color, type));
-    }
-    isDragging = false;
-});
-
-canvas.addEventListener('wheel', e => {
-    e.preventDefault();
-    const factor = e.deltaY > 0 ? 0.9 : 1.1;
-    zoom = Math.max(0.05, Math.min(10, zoom * factor));
-});
-
-canvas.addEventListener('contextmenu', e => e.preventDefault());
-
-document.addEventListener('keydown', e => {
-    if (e.code === 'Space') { paused = !paused; e.preventDefault(); }
-    if (e.code === 'KeyC') { bodies = []; }
-    if (e.code === 'KeyR') { viewX = 0; viewY = 0; zoom = 1; }
-});
-
-// Sliders
-document.getElementById('speedSlider').oninput = function() {
-    timeSpeed = parseFloat(this.value);
-    document.getElementById('speedVal').textContent = timeSpeed.toFixed(2) + '×';
-};
-document.getElementById('softSlider').oninput = function() {
-    softening = parseInt(this.value);
-    document.getElementById('softVal').textContent = softening;
-};
-
-function setAddMode(mode) {
-    addMode = addMode === mode ? null : mode;
-    ['planet', 'star', 'blackhole_add'].forEach(m => {
-        document.getElementById('btn-' + (m === 'blackhole_add' ? 'bh' : m)).classList.toggle('active', addMode === m);
+// ── ORBIT PREDICTION ───────────────────────────────────
+function drawOrbit() {
+  if (!showOrbit || !selectedBody || bodies.length < 2) return;
+  let px=selectedBody.x, py=selectedBody.y, pvx=selectedBody.vx, pvy=selectedBody.vy;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(64,200,224,0.12)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2,6]);
+  ctx.beginPath();
+  const dt = 0.12;
+  for (let s = 0; s < 500; s++) {
+    let ax=0, ay=0;
+    bodies.forEach(b => {
+      if (b.id===selectedBody.id) return;
+      const dx=b.x-px, dy=b.y-py;
+      const d2=dx*dx+dy*dy+softening*softening, d=Math.sqrt(d2);
+      const f=G*b.mass/(d2*d);
+      ax+=f*dx; ay+=f*dy;
     });
+    pvx+=ax*dt; pvy+=ay*dt; px+=pvx*dt; py+=pvy*dt;
+    const sp = w2s(px, py);
+    s===0 ? ctx.moveTo(sp.x, sp.y) : ctx.lineTo(sp.x, sp.y);
+  }
+  ctx.stroke();
+  ctx.restore();
 }
 
-function toggle(varName, elemId) {
-    window[varName] = !window[varName];
-    document.getElementById(elemId).classList.toggle('on', window[varName]);
-    if (!window[varName] && varName === 'showTrails') {
-        bodies.forEach(b => b.trail = []);
-    }
-}
+// ── HUD UPDATE ─────────────────────────────────────────
+let hudTick = 0;
+function updateHUD(KE, PE) {
+  hudTick++;
+  if (hudTick % 4 !== 0 || bodies.length === 0) return;
 
-// ======================================================
-// ENERGY GRAPH
-// ======================================================
-function drawEnergyGraph() {
-    if (!showEnergy || energyHistory.length < 2) return;
+  const E  = KE + PE;
+  const Lv = L();
+  const M  = bodies.reduce((s,b)=>s+b.mass,0);
+  const cm = CoM();
+  const maxV = bodies.reduce((m,b)=>Math.max(m,b.speed()),0);
 
-    eCtx.clearRect(0, 0, 260, 80);
-    eCtx.fillStyle = 'rgba(0,10,30,0.9)';
-    eCtx.fillRect(0, 0, 260, 80);
+  // Topbar
+  $('t-bodies',  bodies.length);
+  $('t-time',    simTime.toFixed(2)+' s');
+  $('t-energy',  E.toExponential(3));
+  $('t-angular', Lv.toExponential(3));
 
-    // Labels
-    eCtx.fillStyle = '#4a6070';
-    eCtx.font = '8px Space Mono';
-    eCtx.fillText('ENERGY HISTORY', 5, 10);
+  // System stats
+  $('s-ke',   KE.toExponential(3));
+  $('s-pe',   PE.toExponential(3));
+  $('s-mass', M.toFixed(0));
+  $('s-com',  `(${cm.x.toFixed(0)}, ${cm.y.toFixed(0)})`);
+  $('s-maxv', maxV.toFixed(2)+' u/s');
+  $('s-zoom', zoom.toFixed(2)+'×');
+  $('s-coll', collisions);
+  $('s-dt',   (lastDt*1000).toFixed(2)+' ms');
 
-    const allVals = [...energyHistory, ...kineticHistory];
-    const minVal = Math.min(...allVals);
-    const maxVal = Math.max(...allVals);
-    const range = maxVal - minVal || 1;
+  // Equations – use reference body
+  const ref = selectedBody || bodies[0];
+  if (ref) {
+    const near = bodies.reduce((best,b) => {
+      if (b.id===ref.id) return best;
+      const dx=b.x-ref.x, dy=b.y-ref.y, d=Math.sqrt(dx*dx+dy*dy);
+      return d < best.d ? {d,b} : best;
+    }, {d:Infinity, b:null});
 
-    function drawLine(history, color) {
-        eCtx.strokeStyle = color;
-        eCtx.lineWidth = 1;
-        eCtx.beginPath();
-        history.forEach((v, i) => {
-            const x = 5 + (i / MAX_HISTORY) * 250;
-            const y = 70 - ((v - minVal) / range) * 55;
-            i === 0 ? eCtx.moveTo(x, y) : eCtx.lineTo(x, y);
-        });
-        eCtx.stroke();
-    }
+    if (near.b) {
+      const r   = near.d;
+      const F   = G * ref.mass * near.b.mass / (r*r);
+      const acc = Math.sqrt(ref.ax**2 + ref.ay**2);
+      const ves = ref.vEsc(r);
+      const rs  = near.b.rs();
+      const T   = 2*Math.PI*Math.sqrt(r**3 / (G*near.b.mass));
+      const vir = KE > 0 ? Math.abs(PE/(2*KE)) : 0;
 
-    drawLine(energyHistory, '#00f5ff');
-    drawLine(kineticHistory, '#39ff14');
-    drawLine(potentialHistory, '#ff6b35');
-
-    // Legend
-    eCtx.font = '7px Space Mono';
-    eCtx.fillStyle = '#00f5ff'; eCtx.fillText('TOTAL', 5, 78);
-    eCtx.fillStyle = '#39ff14'; eCtx.fillText('KE', 50, 78);
-    eCtx.fillStyle = '#ff6b35'; eCtx.fillText('PE', 75, 78);
-}
-
-// ======================================================
-// UPDATE HUD
-// ======================================================
-function updateHUD() {
-    if (bodies.length === 0) return;
-
-    const ke = totalKineticEnergy();
-    const pe = totalPotentialEnergy();
-    const total = ke + pe;
-    const L = totalAngularMomentum();
-    const totalMass = bodies.reduce((s, b) => s + b.mass, 0);
-
-    // Energy history
-    energyHistory.push(total);
-    kineticHistory.push(ke);
-    potentialHistory.push(pe);
-    if (energyHistory.length > MAX_HISTORY) { energyHistory.shift(); kineticHistory.shift(); potentialHistory.shift(); }
-
-    // Stats bar
-    document.getElementById('stat-bodies').textContent = bodies.length;
-    document.getElementById('stat-time').textContent = simTime.toFixed(1) + 's';
-    document.getElementById('stat-mass').textContent = totalMass.toFixed(0);
-    document.getElementById('stat-tenergy').textContent = total.toExponential(2);
-    document.getElementById('stat-angular').textContent = L.toExponential(2);
-
-    // Equations panel
-    const ref = selectedBody || bodies[0];
-    const nearIdx = bodies.reduce((best, b, i) => {
-        if (b.id === ref.id) return best;
-        const dx = b.x - ref.x, dy = b.y - ref.y;
-        const d = Math.sqrt(dx*dx+dy*dy);
-        return d < best.d ? { d, i } : best;
-    }, { d: Infinity, i: -1 });
-
-    const nearBody = nearIdx.i >= 0 ? bodies[nearIdx.i] : null;
-
-    if (nearBody) {
-        const r = nearIdx.d;
-        const F = G * ref.mass * nearBody.mass / (r * r);
-        const a = Math.sqrt(ref.ax * ref.ax + ref.ay * ref.ay);
-        const vEsc = Math.sqrt(2 * G * nearBody.mass / r);
-        const rs = nearBody.schwarzschildRadius();
-        const T = 2 * Math.PI * Math.sqrt(Math.pow(r, 3) / (G * nearBody.mass));
-        const virialRatio = ke !== 0 ? Math.abs(pe / (2 * ke)) : 0;
-
-        document.getElementById('eq-force').textContent = `F = ${F.toExponential(3)} N`;
-        document.getElementById('eq-accel').textContent = `|a| = ${a.toFixed(4)} m/s²`;
-        document.getElementById('eq-energy').textContent = `E = ${total.toExponential(3)} J`;
-        document.getElementById('eq-angular').textContent = `L = ${Math.abs(L).toExponential(3)}`;
-        document.getElementById('eq-escape').textContent = `v_esc = ${vEsc.toFixed(2)} units/s`;
-        document.getElementById('eq-schwarzschild').textContent = `r_s = ${rs.toFixed(3)} units`;
-        document.getElementById('eq-period').textContent = `T = ${T.toFixed(2)} s`;
-        document.getElementById('eq-virial').textContent = `|PE/2KE| = ${virialRatio.toFixed(3)}`;
+      $('eq-F',    `F = ${F.toExponential(3)} [sim units]`);
+      $('eq-A',    `|a| = ${acc.toFixed(5)} u/s²`);
+      $('eq-E',    `E = ${E.toExponential(3)} [sim units]`);
+      $('eq-L',    `L = ${Math.abs(Lv).toExponential(3)}`);
+      $('eq-Vesc', `v_esc = ${ves.toFixed(3)} u/s`);
+      $('eq-Rs',   `r_s = ${rs.toFixed(4)} u`);
+      $('eq-T',    `T = ${T.toFixed(3)} s`);
+      $('eq-V',    `2⟨T⟩/|⟨V⟩| = ${vir.toFixed(4)}`);
     }
 
     // Selected body panel
     if (selectedBody) {
-        document.getElementById('bi-type').textContent = selectedBody.type.toUpperCase();
-        document.getElementById('bi-mass').textContent = selectedBody.mass.toFixed(0);
-        document.getElementById('bi-vel').textContent = selectedBody.speed().toFixed(3) + ' u/s';
-        document.getElementById('bi-pos').textContent = `(${selectedBody.x.toFixed(0)}, ${selectedBody.y.toFixed(0)})`;
-        document.getElementById('bi-ke').textContent = selectedBody.kineticEnergy().toExponential(3);
-        document.getElementById('bi-acc').textContent = Math.sqrt(selectedBody.ax**2 + selectedBody.ay**2).toFixed(5);
-        document.getElementById('bi-near').textContent = nearBody ? nearBody.type + ' m=' + nearBody.mass.toFixed(0) : '—';
+      document.getElementById('sel-content').innerHTML = `
+        <div class="selected-grid">
+          <div class="sel-row"><span class="sel-k">Type</span><span class="sel-v">${selectedBody.type}</span></div>
+          <div class="sel-row"><span class="sel-k">Mass</span><span class="sel-v">${selectedBody.mass.toFixed(1)}</span></div>
+          <div class="sel-row"><span class="sel-k">Speed</span><span class="sel-v">${selectedBody.speed().toFixed(4)} u/s</span></div>
+          <div class="sel-row"><span class="sel-k">KE</span><span class="sel-v">${selectedBody.ke().toExponential(3)}</span></div>
+          <div class="sel-row"><span class="sel-k">Position</span><span class="sel-v">(${selectedBody.x.toFixed(1)}, ${selectedBody.y.toFixed(1)})</span></div>
+          <div class="sel-row"><span class="sel-k">|Accel|</span><span class="sel-v">${Math.sqrt(selectedBody.ax**2+selectedBody.ay**2).toFixed(5)}</span></div>
+        </div>`;
     }
+  }
 }
 
-// ======================================================
-// DRAW ORBIT PREDICTION
-// ======================================================
-function drawOrbitPrediction() {
-    if (!showOrbit || !selectedBody || bodies.length < 2) return;
+function $(id, val) { const el = document.getElementById(id); if(el) el.textContent = val; }
 
-    // Simple Euler predict for visualization
-    let px = selectedBody.x, py = selectedBody.y;
-    let pvx = selectedBody.vx, pvy = selectedBody.vy;
+// ── ENERGY GRAPH ───────────────────────────────────────
+function drawEnergyGraph(KE, PE) {
+  eTotal.push(KE+PE); eKin.push(KE); ePot.push(PE);
+  if (eTotal.length > HIST) { eTotal.shift(); eKin.shift(); ePot.shift(); }
+  if (eTotal.length < 2) return;
 
-    ctx.save();
-    ctx.strokeStyle = 'rgba(0,245,255,0.15)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([3, 5]);
+  const W = 266, H = 76;
+  eCtx.fillStyle = '#060c18'; eCtx.fillRect(0,0,W,H);
+
+  const all = [...eTotal, ...eKin];
+  const mn  = Math.min(...all), mx = Math.max(...all);
+  const rng = mx - mn || 1;
+
+  function line(arr, col) {
+    eCtx.strokeStyle = col; eCtx.lineWidth = 1;
+    eCtx.beginPath();
+    arr.forEach((v,i) => {
+      const x = (i/HIST)*W;
+      const y = H - 6 - ((v-mn)/rng)*(H-12);
+      i===0 ? eCtx.moveTo(x,y) : eCtx.lineTo(x,y);
+    });
+    eCtx.stroke();
+  }
+
+  line(eTotal, '#40c8e0');
+  line(eKin,   '#48c878');
+  line(ePot,   '#e8a020');
+
+  // Labels
+  eCtx.font = '7px IBM Plex Mono';
+  eCtx.fillStyle = '#40c8e0'; eCtx.fillText('TOTAL', 2, H-1);
+  eCtx.fillStyle = '#48c878'; eCtx.fillText('KE', 48, H-1);
+  eCtx.fillStyle = '#e8a020'; eCtx.fillText('PE', 68, H-1);
+}
+
+// ── MOUSE ──────────────────────────────────────────────
+let dragging=false, dX=0, dY=0, mX=0, mY=0;
+
+canvas.addEventListener('mousedown', e => {
+  const w = s2w(e.clientX, e.clientY);
+  if (e.button === 2) {
+    isPanning=true; panX=e.clientX-viewX*zoom; panY=e.clientY-viewY*zoom; return;
+  }
+  if (addMode) { dX=w.x; dY=w.y; dragging=true; return; }
+  selectedBody = null;
+  for (const b of bodies) {
+    const dx=b.x-w.x, dy=b.y-w.y;
+    if (Math.sqrt(dx*dx+dy*dy) < b.radius + 12/zoom) { selectedBody=b; break; }
+  }
+  document.getElementById('sel-content').innerHTML = selectedBody
+    ? '<span class="no-selection">Fetching data…</span>'
+    : '<span class="no-selection">No body selected — click to inspect</span>';
+});
+
+canvas.addEventListener('mousemove', e => {
+  mX=e.clientX; mY=e.clientY;
+  if (isPanning) { viewX=(e.clientX-panX)/zoom; viewY=(e.clientY-panY)/zoom; }
+});
+
+canvas.addEventListener('mouseup', e => {
+  if (isPanning) { isPanning=false; return; }
+  if (dragging && addMode) {
+    const w = s2w(e.clientX, e.clientY);
+    const vx=(dX-w.x)*0.05, vy=(dY-w.y)*0.05;
+    if (addMode==='blackhole_add') bodies.push(new Body(dX,dY,vx,vy,20000,'#c04000','blackhole'));
+    else if (addMode==='star')     bodies.push(new Body(dX,dY,vx,vy,3000+Math.random()*2000,'#f0c040','star'));
+    else                            bodies.push(new Body(dX,dY,vx,vy,100+Math.random()*200,'#6090b0','planet'));
+  }
+  dragging=false;
+});
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  zoom = Math.max(0.05, Math.min(12, zoom * (e.deltaY>0 ? 0.9 : 1.1)));
+}, {passive:false});
+
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+document.addEventListener('keydown', e => {
+  if (e.code==='Space') {
+    paused=!paused;
+    document.getElementById('status-dot').classList.toggle('paused', paused);
+    $('status-text', paused ? 'PAUSED' : 'SIMULATION RUNNING');
+    e.preventDefault();
+  }
+  if (e.code==='KeyC') { bodies=[]; }
+  if (e.code==='KeyR') { viewX=0; viewY=0; zoom=1; }
+});
+
+// Sliders
+document.getElementById('sl-speed').oninput = function() {
+  timeSpeed = parseFloat(this.value);
+  $('v-speed', timeSpeed.toFixed(2)+' ×');
+};
+document.getElementById('sl-soft').oninput = function() {
+  softening = parseInt(this.value);
+  $('v-soft', softening);
+};
+document.getElementById('sl-trail').oninput = function() {
+  trailLength = parseInt(this.value);
+  $('v-trail', trailLength);
+};
+
+function setMode(m) {
+  addMode = (addMode===m) ? null : m;
+  ['planet','star','bh'].forEach(id => {
+    const el = document.getElementById('btn-'+id);
+    if (el) { el.className = 'add-btn'; }
+  });
+  if (addMode) {
+    const map = {planet:'btn-planet', star:'btn-star', blackhole_add:'btn-bh'};
+    const cls = {planet:'active', star:'active-amber', blackhole_add:'active-red'};
+    const el = document.getElementById(map[addMode]);
+    if (el) el.className = 'add-btn ' + cls[addMode];
+  }
+}
+
+// ── BACKGROUND STARS ───────────────────────────────────
+const bgStars = Array.from({length:200}, () => ({
+  x: Math.random()*4000-2000,
+  y: Math.random()*4000-2000,
+  r: Math.random()*0.8+0.2,
+  a: 0.2+Math.random()*0.4
+}));
+
+function drawBG() {
+  ctx.fillStyle = '#02040a';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  bgStars.forEach(s => {
+    const p = w2s(s.x, s.y);
+    if (p.x<-10||p.x>canvas.width+10||p.y<-10||p.y>canvas.height+10) return;
+    ctx.globalAlpha = s.a;
+    ctx.fillStyle = '#d4e4f4';
     ctx.beginPath();
-    const dt = 0.1;
-    for (let step = 0; step < 500; step++) {
-        let ax = 0, ay = 0;
-        bodies.forEach(b => {
-            if (b.id === selectedBody.id) return;
-            const dx = b.x - px, dy = b.y - py;
-            const distSq = dx*dx + dy*dy + softening*softening;
-            const dist = Math.sqrt(distSq);
-            const f = G * b.mass / (distSq * dist);
-            ax += f * dx; ay += f * dy;
-        });
-        pvx += ax * dt; pvy += ay * dt;
-        px += pvx * dt; py += pvy * dt;
-        const s = worldToScreen(px, py);
-        step === 0 ? ctx.moveTo(s.x, s.y) : ctx.lineTo(s.x, s.y);
-    }
+    ctx.arc(p.x, p.y, s.r, 0, Math.PI*2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+}
+
+// ── MAIN LOOP ──────────────────────────────────────────
+let last = Date.now(), fc = 0, fpsTimer = Date.now();
+
+function loop() {
+  const now = Date.now();
+  const raw = Math.min((now-last)/1000, 0.033);
+  last = now; lastDt = raw;
+  fc++;
+
+  if (now-fpsTimer > 1000) {
+    $('t-fps', fc); fc=0; fpsTimer=now;
+  }
+
+  let KE=0, PE=0;
+  if (!paused && bodies.length > 0) {
+    const dt = raw * timeSpeed;
+    simTime += dt;
+    rk4(bodies, dt);
+    bodies.forEach(b => b.step(dt));
+    merge();
+    KE = ke(); PE = pe();
+    drawEnergyGraph(KE, PE);
+    updateHUD(KE, PE);
+  }
+
+  drawBG();
+  drawOrbit();
+  bodies.forEach(b => b.draw());
+
+  // Drag preview line
+  if (dragging && addMode) {
+    const s = w2s(dX, dY);
+    ctx.strokeStyle = 'rgba(64,200,224,0.5)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(s.x,s.y); ctx.lineTo(mX,mY); ctx.stroke();
+    ctx.setLineDash([]);
+    const dvx=(dX-s2w(mX,mY).x)*0.05, dvy=(dY-s2w(mX,mY).y)*0.05;
+    const spd = Math.sqrt(dvx**2+dvy**2);
+    ctx.fillStyle = '#40c8e0';
+    ctx.font = '400 9px IBM Plex Mono';
+    ctx.fillText(`v = ${spd.toFixed(3)} u/s`, mX+10, mY-8);
+  }
+
+  // CoM crosshair
+  if (showCoM && bodies.length > 1) {
+    const cm = CoM(), cs = w2s(cm.x, cm.y);
+    ctx.strokeStyle = 'rgba(212,228,244,0.18)';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(cs.x-10,cs.y); ctx.lineTo(cs.x+10,cs.y);
+    ctx.moveTo(cs.x,cs.y-10); ctx.lineTo(cs.x,cs.y+10);
     ctx.stroke();
-    ctx.restore();
+  }
+
+  requestAnimationFrame(loop);
 }
 
-// ======================================================
-// MAIN LOOP
-// ======================================================
-let lastFrame = Date.now();
-let frameCount = 0, fpsTimer = Date.now();
-
-function animate() {
-    const now = Date.now();
-    const rawDt = Math.min((now - lastFrame) / 1000, 0.033);
-    lastFrame = now;
-
-    // FPS counter
-    frameCount++;
-    if (now - fpsTimer > 1000) {
-        document.getElementById('stat-fps').textContent = frameCount;
-        frameCount = 0;
-        fpsTimer = now;
-    }
-
-    if (!paused && bodies.length > 0) {
-        const dt = rawDt * timeSpeed;
-        simTime += dt;
-
-        // RK4 integration
-        rk4Step(bodies, dt);
-
-        // Update trails & age
-        bodies.forEach(b => b.update(dt));
-
-        // Check collisions
-        checkCollisions();
-
-        // Update HUD every 10 frames
-        if (frameCount % 3 === 0) updateHUD();
-    }
-
-    // Draw
-    ctx.fillStyle = 'rgba(0,0,10,0.25)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Star field (static, decorative)
-    if (bodies.length === 0) {
-        ctx.fillStyle = '#000011';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-
-    drawOrbitPrediction();
-    bodies.forEach(b => b.draw());
-
-    // Drag line for adding bodies
-    if (isDragging && addMode) {
-        const s = worldToScreen(dragStartX, dragStartY);
-        ctx.strokeStyle = 'rgba(0,245,255,0.6)';
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([5, 5]);
-        ctx.beginPath();
-        ctx.moveTo(s.x, s.y);
-        ctx.lineTo(mouseX, mouseY);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Velocity arrow label
-        const dvx = (dragStartX - screenToWorld(mouseX, mouseY).x) * 0.05;
-        const dvy = (dragStartY - screenToWorld(mouseX, mouseY).y) * 0.05;
-        const spd = Math.sqrt(dvx*dvx + dvy*dvy).toFixed(2);
-        ctx.fillStyle = '#00f5ff';
-        ctx.font = '10px Space Mono';
-        ctx.fillText(`v = ${spd} u/s`, mouseX + 10, mouseY - 10);
-    }
-
-    // Center of mass indicator
-    if (bodies.length > 1) {
-        const cm = centerOfMass();
-        const s = worldToScreen(cm.x, cm.y);
-        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(s.x - 8, s.y); ctx.lineTo(s.x + 8, s.y);
-        ctx.moveTo(s.x, s.y - 8); ctx.lineTo(s.x, s.y + 8);
-        ctx.stroke();
-    }
-
-    drawEnergyGraph();
-    requestAnimationFrame(animate);
-}
-
-// ======================================================
-// START
-// ======================================================
 loadPreset('solar');
-animate();
+loop();
 </script>
 </body>
 </html>
